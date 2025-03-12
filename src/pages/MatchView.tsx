@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CircleR } from 'lucide-react';
+import { CircleDot } from 'lucide-react';
 import { GameResult, Match } from '@/types';
 
 const MatchView = () => {
@@ -79,7 +79,7 @@ const MatchView = () => {
             className="gap-2"
             onClick={() => handleBreakAndRun('A')}
           >
-            <CircleR className="w-4 h-4" /> Zejście z kija
+            <CircleDot className="w-4 h-4" /> Zejście z kija
           </Button>
         </Card>
 
@@ -94,7 +94,7 @@ const MatchView = () => {
             className="gap-2"
             onClick={() => handleBreakAndRun('B')}
           >
-            <CircleR className="w-4 h-4" /> Zejście z kija
+            <CircleDot className="w-4 h-4" /> Zejście z kija
           </Button>
         </Card>
       </div>
