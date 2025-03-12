@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MatchHistory from "./pages/MatchHistory";
+import NewMatch from "./pages/NewMatch";
+import MatchView from "./pages/MatchView";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +42,22 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route 
+                path="/new-match" 
+                element={
+                  <ProtectedRoute>
+                    <NewMatch />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/match/:id" 
+                element={
+                  <ProtectedRoute>
+                    <MatchView />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
