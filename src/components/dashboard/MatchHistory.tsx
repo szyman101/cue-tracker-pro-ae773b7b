@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -39,6 +40,16 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
             const playerA = match.playerAName || (match.playerA === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const season = userSeasons.find(s => s.id === match.seasonId);
+            
+            // Extract the scores from each game
+            let totalScoreA = 0;
+            let totalScoreB = 0;
+            
+            // Sum up all points from all games
+            match.games.forEach(game => {
+              totalScoreA += game.scoreA;
+              totalScoreB += game.scoreB;
+            });
 
             return (
               <div key={match.id} className="grid grid-cols-5 p-4 hover:bg-muted/50">
@@ -46,7 +57,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
                 <div className={match.winner === match.playerA ? "font-bold" : ""}>{playerA}</div>
                 <div className={match.winner === match.playerB ? "font-bold" : ""}>{playerB}</div>
                 <div>
-                  {match.games.filter(g => g.winner === "A").length} - {match.games.filter(g => g.winner === "B").length}
+                  {totalScoreA} - {totalScoreB}
                 </div>
                 <div>{season?.name || "Towarzyski"}</div>
               </div>

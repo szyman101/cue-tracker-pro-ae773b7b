@@ -67,6 +67,16 @@ const MatchHistory = () => {
                 console.log(`Is current user player A: ${isPlayerA}`);
                 console.log(`Opponent name being displayed: ${opponentName}`);
                 
+                // Calculate total scores from all games
+                let totalScoreA = 0;
+                let totalScoreB = 0;
+                
+                match.games.forEach(game => {
+                  totalScoreA += game.scoreA;
+                  totalScoreB += game.scoreB;
+                });
+                
+                // Also keep track of games won for showing win/loss
                 const userWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
                 ).length;
@@ -80,6 +90,10 @@ const MatchHistory = () => {
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
                 const isWinner = match.winner === currentUser?.id;
+                
+                // Display user's score first, followed by opponent's score
+                const userScore = isPlayerA ? totalScoreA : totalScoreB;
+                const opponentScore = isPlayerA ? totalScoreB : totalScoreA;
 
                 return (
                   <TableRow key={match.id}>
@@ -88,7 +102,7 @@ const MatchHistory = () => {
                     <TableCell>{gameTypes}</TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>
-                        {userWins} - {opponentWins}
+                        {isPlayerA ? `${totalScoreA} - ${totalScoreB}` : `${totalScoreB} - ${totalScoreA}`}
                       </span>
                       {match.games.some(g => g.breakAndRun) && (
                         <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
