@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, Calendar, Trophy } from "lucide-react";
-import { Season, User } from "@/types";
+import { Match, Season, User } from "@/types";
 
 interface StatsCardsProps {
   totalMatchesPlayed: number;

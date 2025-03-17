@@ -2,132 +2,163 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatsCards from "@/components/dashboard/StatsCards";
+import SeasonManagement from "@/components/dashboard/SeasonManagement";
 import MatchHistory from "@/components/dashboard/MatchHistory";
 import SeasonHistory from "@/components/dashboard/SeasonHistory";
-import SeasonManagement from "@/components/dashboard/SeasonManagement";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
-import { calculateWinRate, calculateAverageScore, calculateBreaks, calculateMatchesWon } from "@/utils/stats";
-import MigrationButton from "@/components/dashboard/MigrationButton";
+import BackButton from "@/components/BackButton";
+import Logo from "@/components/Logo";
+import { Button } from "@/components/ui/button";
+import { LogOut, UserMinus, UserX } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
-  const { currentUser, secondUser, isAdmin, isTwoPlayerMode, logout } = useAuth();
-  const { getUserMatches, getUserSeasons, getActiveSeasons } = useData();
+  const { currentUser, secondUser, isAdmin, logout, isTwoPlayerMode } = useAuth();
+  const { 
+    getUserMatches, 
+    getUserSeasons, 
+    getActiveSeasons, 
+    clearSeasons, 
+    clearMatches
+  } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   const userSeasons = currentUser ? getUserSeasons(currentUser.id) : [];
   const activeSeasons = getActiveSeasons();
 
+  // Statystyki dla głównego gracza
+  const totalMatchesPlayed = userMatches.length;
+  const matchesWon = userMatches.filter(match => match.winner === currentUser?.id).length;
+  const winRate = totalMatchesPlayed > 0 ? Math.round((matchesWon / totalMatchesPlayed) * 100) : 0;
+
+  // Statystyki dla drugiego gracza (jeśli jest)
+  const secondUserMatches = secondUser ? getUserMatches(secondUser.id) : [];
+  const secondUserSeasons = secondUser ? getUserSeasons(secondUser.id) : [];
+  const secondUserMatchesWon = secondUserMatches.filter(match => match.winner === secondUser?.id).length;
+  const secondUserWinRate = secondUserMatches.length > 0 
+    ? Math.round((secondUserMatchesWon / secondUserMatches.length) * 100) 
+    : 0;
+
+  const clearMatchesAndSeasons = () => {
+    clearMatches();
+    clearSeasons();
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="space-x-2">
-          {isAdmin && <Button asChild variant="outline"><Link to="/admin">Panel administratora</Link></Button>}
-          <Button asChild><Link to="/new-match">Nowa gra</Link></Button>
-        </div>
+    <div className="container mx-auto py-6 space-y-6 relative">
+      {/* Logo background with 2% visibility */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] z-0">
+        <img 
+          src="/lovable-uploads/0e728591-73b1-4b77-922d-298326332f43.png" 
+          alt="Background Logo" 
+          className="w-full h-full object-contain"
+        />
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <StatsCards
-            totalMatchesPlayed={userMatches.length}
-            matchesWon={calculateMatchesWon(userMatches, currentUser?.id)}
-            winRate={calculateWinRate(userMatches, currentUser?.id)}
-            activeSeasons={activeSeasons}
-            userSeasons={userSeasons}
-            currentUser={currentUser}
-            title="Statystyki"
-          />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Ostatnie mecze</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MatchHistory 
-                userMatches={userMatches} 
-                userSeasons={userSeasons}
-                currentUser={currentUser} 
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <UserControls />
-          
-          {/* Przycisk migracji danych */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Migracja danych</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Przenieś swoje dane z lokalnego magazynu do Supabase, aby mieć do nich dostęp na różnych urządzeniach.
+      
+      <div className="flex justify-between items-center relative z-10">
+        <div className="flex items-center gap-4">
+          <Logo size="small" />
+          <div>
+            <h1 className="text-3xl font-bold flex items-center">
+              Witaj, {currentUser?.nick} {isAdmin && <Badge className="ml-2">Administrator</Badge>}
+            </h1>
+            {secondUser && (
+              <p className="text-muted-foreground">
+                Drugi gracz: {secondUser.nick}
               </p>
-              <MigrationButton />
-            </CardContent>
-          </Card>
-
-          {isTwoPlayerMode && secondUser && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Drugi gracz</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-4 mb-4">
-                  <Avatar>
-                    <AvatarFallback>{secondUser.nick.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{secondUser.nick}</p>
-                    <p className="text-sm text-muted-foreground">{secondUser.role}</p>
-                  </div>
-                </div>
-                <Button onClick={() => logout(true)} variant="outline" className="w-full">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Wyloguj drugiego gracza
-                </Button>
-              </CardContent>
-            </Card>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-4">
+          {isAdmin ? (
+            <AdminControls clearMatchesAndSeasons={clearMatchesAndSeasons} />
+          ) : (
+            <UserControls />
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Moje sezony</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SeasonHistory 
-                userSeasons={userSeasons}
-                currentUser={currentUser}
-              />
-              {isAdmin && (
-                <div className="mt-4">
-                  <SeasonManagement activeSeasons={activeSeasons} />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Panel administratora</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AdminControls clearMatchesAndSeasons={() => {}} />
-              </CardContent>
-            </Card>
-          )}
+          <div className="flex gap-2">
+            {secondUser && (
+              <Button variant="outline" onClick={() => logout(true)}>
+                <UserX className="w-4 h-4 mr-2" />
+                Wyloguj {secondUser.nick}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => logout()}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Wyloguj {currentUser?.nick}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Główny gracz */}
+      <StatsCards 
+        totalMatchesPlayed={totalMatchesPlayed}
+        matchesWon={matchesWon}
+        winRate={winRate}
+        activeSeasons={activeSeasons}
+        userSeasons={userSeasons}
+        currentUser={currentUser}
+        title={isTwoPlayerMode ? `Statystyki gracza ${currentUser?.nick}` : undefined}
+      />
+
+      {/* Drugi gracz - jeśli jest */}
+      {secondUser && (
+        <StatsCards 
+          totalMatchesPlayed={secondUserMatches.length}
+          matchesWon={secondUserMatchesWon}
+          winRate={secondUserWinRate}
+          activeSeasons={activeSeasons}
+          userSeasons={secondUserSeasons}
+          currentUser={secondUser}
+          title={`Statystyki gracza ${secondUser.nick}`}
+        />
+      )}
+
+      {isAdmin && (
+        <SeasonManagement activeSeasons={activeSeasons} />
+      )}
+
+      <Tabs defaultValue="history" className="space-y-4 relative z-10">
+        <TabsList>
+          <TabsTrigger value="history">Historia Meczów</TabsTrigger>
+          <TabsTrigger value="seasons">Sezony</TabsTrigger>
+        </TabsList>
+        <TabsContent value="history" className="space-y-4">
+          <MatchHistory 
+            userMatches={userMatches} 
+            userSeasons={userSeasons} 
+            currentUser={currentUser} 
+          />
+          {secondUser && (
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4">Historia meczów: {secondUser.nick}</h2>
+              <MatchHistory 
+                userMatches={secondUserMatches} 
+                userSeasons={secondUserSeasons} 
+                currentUser={secondUser} 
+                hideControls={true}
+              />
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="seasons" className="space-y-4">
+          <SeasonHistory userSeasons={userSeasons} currentUser={currentUser} />
+          {secondUser && (
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4">Sezony gracza: {secondUser.nick}</h2>
+              <SeasonHistory userSeasons={secondUserSeasons} currentUser={secondUser} />
+            </div>
+          )}
+          {activeSeasons.length > 0 && !isAdmin && (
+            <SeasonManagement activeSeasons={activeSeasons} />
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <BackButton />
     </div>
   );
 };
