@@ -1,15 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Explicitly define your custom RPC parameters
-interface EnableRealtimeParams {
-  table_name: string;
-}
-
 export const enableRealtimeForTable = async (tableName: string) => {
   try {
-    // @ts-ignore - Ignoring type checking for custom RPC function
-    // This is necessary because the Supabase types don't include this custom function
+    // Now we can call the RPC function without type errors
     const { error } = await supabase.rpc('enable_realtime', {
       table_name: tableName
     });
