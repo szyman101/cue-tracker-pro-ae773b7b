@@ -44,15 +44,15 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
       };
     });
   } catch (error) {
-    console.error("Błąd podczas pobierania meczy z Supabase:", error);
+    console.error("Error while fetching matches from Supabase:", error);
     return [];
   }
 };
 
-// Save a match to Supabase
+// Save a match directly to Supabase without requiring profiles to exist
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
-    console.log("Zapisuję mecz do Supabase:", match);
+    console.log("Saving match to Supabase:", match);
     
     const gamesJson = match.games as unknown as Json;
     
@@ -62,7 +62,7 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     const winner = match.winner ? ensureUuid(match.winner) : null;
     const seasonId = match.seasonId ? ensureUuid(match.seasonId) : null;
     
-    console.log("Przygotowane ID dla meczu:", {
+    console.log("Prepared IDs for match:", {
       matchId,
       playerA,
       playerB,
@@ -70,36 +70,57 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       seasonId
     });
 
-    const playerAName = match.playerAName || 'Gracz A';
-    const playerBName = match.playerBName || 'Gracz B';
-    console.log("Nazwy graczy:", { playerAName, playerBName });
+    const playerAName = match.playerAName || 'Player A';
+    const playerBName = match.playerBName || 'Player B';
+    console.log("Player names:", { playerAName, playerBName });
 
+    // We'll still try to create profiles but continue even if they fail
     try {
-      console.log("Sprawdzam/tworzę profil gracza A:", playerA, playerAName);
+      console.log("Checking/creating profile for player A:", playerA, playerAName);
       await createProfileIfNotExists(playerA, playerAName);
     } catch (error) {
-      console.error("Błąd podczas tworzenia profilu gracza A:", error);
+      console.error("Error creating profile for player A:", error);
+      // Continue even if profile creation fails
     }
     
     try {
-      console.log("Sprawdzam/tworzę profil gracza B:", playerB, playerBName);
+      console.log("Checking/creating profile for player B:", playerB, playerBName);
       await createProfileIfNotExists(playerB, playerBName);
     } catch (error) {
-      console.error("Błąd podczas tworzenia profilu gracza B:", error);
+      console.error("Error creating profile for player B:", error);
+      // Continue even if profile creation fails
     }
     
     if (winner) {
       try {
         const winnerName = winner === playerA ? playerAName : playerBName;
-        console.log("Sprawdzam/tworzę profil zwycięzcy:", winner, winnerName);
+        console.log("Checking/creating profile for winner:", winner, winnerName);
         await createProfileIfNotExists(winner, winnerName);
       } catch (error) {
-        console.error("Błąd podczas tworzenia profilu zwycięzcy:", error);
+        console.error("Error creating profile for winner:", error);
+        // Continue even if profile creation fails
       }
     }
     
-    console.log("Zapisywanie meczu do Supabase po stworzeniu profili");
+    console.log("Saving match to local IndexedDB as fallback");
+    // First, try to save locally to ensure data isn't lost even if Supabase save fails
+    try {
+      // Use the local IndexedDB database to save the match
+      const db = await window.indexedDB.open("billiards-tracker", 1);
+      db.onsuccess = () => {
+        const database = db.result;
+        const transaction = database.transaction("matches", "readwrite");
+        const store = transaction.objectStore("matches");
+        store.put(match);
+        console.log("Match saved to local IndexedDB successfully");
+      };
+    } catch (localError) {
+      console.error("Error saving match to local IndexedDB:", localError);
+    }
     
+    console.log("Saving match to Supabase after profile creation attempts");
+    
+    // Prepare match data for saving
     const matchData = {
       id: matchId,
       date: match.date,
@@ -112,24 +133,57 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       time_elapsed: match.timeElapsed,
       season_id: seasonId,
       games_to_win: match.gamesToWin,
-      notes: match.notes
+      notes: match.notes || null
     };
     
-    console.log("Dane meczu do zapisania:", matchData);
+    console.log("Match data to save:", matchData);
     
-    const { data, error } = await supabase
-      .from('matches')
-      .upsert(matchData)
-      .select();
-      
-    if (error) {
-      console.error("Szczegółowy błąd zapisu meczu:", error);
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .upsert(matchData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false
+        })
+        .select();
+        
+      if (error) {
+        console.error("Detailed error when saving match:", error);
+        throw error;
+      } else {
+        console.log("Match saved successfully to Supabase:", data);
+        
+        // If the match has a season ID, try to save the season-match relation
+        if (seasonId) {
+          try {
+            console.log("Saving season-match relation:", { seasonId, matchId });
+            
+            const { error: relationError } = await supabase
+              .from('season_matches')
+              .upsert({
+                season_id: seasonId,
+                match_id: matchId
+              }, {
+                onConflict: 'season_id,match_id',
+                ignoreDuplicates: true
+              });
+              
+            if (relationError) {
+              console.error("Error saving season-match relation:", relationError);
+            } else {
+              console.log("Season-match relation saved successfully");
+            }
+          } catch (relationError) {
+            console.error("Error in season-match relation save:", relationError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error during match save to Supabase:", error);
       throw error;
-    } else {
-      console.log("Mecz zapisany pomyślnie w Supabase:", data);
     }
   } catch (error) {
-    console.error("Błąd podczas zapisywania meczu do Supabase:", error);
+    console.error("Error saving match to Supabase:", error);
     throw error;
   }
 };
@@ -149,6 +203,7 @@ export const deleteMatchFromSupabase = async (matchId: string): Promise<void> =>
       
     if (relationError) {
       console.error("Error deleting season-match relations:", relationError);
+      // Continue with match deletion even if relation deletion fails
     }
     
     // Then delete the match itself
