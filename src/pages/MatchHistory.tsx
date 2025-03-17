@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import BackButton from "@/components/BackButton";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
@@ -163,6 +165,8 @@ const MatchHistory = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <BackButton />
     </div>
   );
 };

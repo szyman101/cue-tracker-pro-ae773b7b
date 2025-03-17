@@ -2,7 +2,6 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
-import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatsCards from "@/components/dashboard/StatsCards";
 import SeasonManagement from "@/components/dashboard/SeasonManagement";
@@ -10,8 +9,9 @@ import MatchHistory from "@/components/dashboard/MatchHistory";
 import SeasonHistory from "@/components/dashboard/SeasonHistory";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
+import BackButton from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
-import { LogOut, ArrowLeft } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 const Dashboard = () => {
   const { currentUser, isAdmin, logout } = useAuth();
@@ -22,7 +22,6 @@ const Dashboard = () => {
     clearSeasons, 
     clearMatches
   } = useData();
-  const navigate = useNavigate();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   const userSeasons = currentUser ? getUserSeasons(currentUser.id) : [];
@@ -35,10 +34,6 @@ const Dashboard = () => {
   const clearMatchesAndSeasons = () => {
     clearMatches();
     clearSeasons();
-  };
-
-  const handleGoBack = () => {
-    navigate(-1);
   };
 
   return (
@@ -93,16 +88,7 @@ const Dashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Back button positioned in the bottom left */}
-      <Button 
-        variant="outline" 
-        size="icon" 
-        onClick={handleGoBack}
-        className="fixed bottom-6 left-6 rounded-full shadow-md"
-      >
-        <ArrowLeft className="h-5 w-5" />
-        <span className="sr-only">Wróć</span>
-      </Button>
+      <BackButton />
     </div>
   );
 };

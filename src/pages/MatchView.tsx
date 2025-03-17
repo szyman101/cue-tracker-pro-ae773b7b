@@ -7,6 +7,7 @@ import { toast } from '@/hooks/use-toast';
 import Scoreboard from '@/components/match/Scoreboard';
 import GameHistory from '@/components/match/GameHistory';
 import { useMatchState } from '@/hooks/use-match-state';
+import BackButton from '@/components/BackButton';
 
 const MatchView = () => {
   const location = useLocation();
@@ -140,6 +141,8 @@ const MatchView = () => {
         playerAName={playerA?.nick || ''} 
         playerBName={playerB?.nick || ''} 
       />
+      
+      <BackButton />
     </div>
   );
 };

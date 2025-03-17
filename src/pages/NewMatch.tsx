@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { GameType, Match } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
+import BackButton from '@/components/BackButton';
 
 const NewMatch = () => {
   const navigate = useNavigate();
@@ -134,6 +135,8 @@ const NewMatch = () => {
           </Button>
         </CardContent>
       </Card>
+      
+      <BackButton />
     </div>
   );
 };
