@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Match, Season, GameType, GameResult } from "@/types";
 import * as db from "./db";
@@ -151,28 +152,95 @@ const ensureUuid = (id: string): string => {
   return uuid;
 };
 
+// Sprawdź czy profil istnieje w Supabase
+const checkProfileExists = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error checking if profile exists:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error("Error in checkProfileExists:", error);
+    return false;
+  }
+};
+
+// Utwórz profil dla użytkownika jeśli nie istnieje
+const createProfileIfNotExists = async (userId: string, nickname: string): Promise<boolean> => {
+  try {
+    // Najpierw sprawdź czy profil istnieje
+    const profileExists = await checkProfileExists(userId);
+    
+    // Jeśli nie istnieje, utwórz go
+    if (!profileExists) {
+      console.log(`Tworzenie profilu dla użytkownika ${userId} (${nickname})`);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          nick: nickname || 'Gracz',
+          role: 'player'
+        });
+        
+      if (error) {
+        console.error("Error creating profile:", error);
+        return false;
+      }
+      
+      console.log(`Profil utworzony pomyślnie dla ${userId}`);
+      return true;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in createProfileIfNotExists:", error);
+    return false;
+  }
+};
+
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
     const gamesJson = match.games as unknown as Json;
     
+    // Przygotuj prawidłowe UUID
+    const matchId = ensureUuid(match.id);
     const playerA = ensureUuid(match.playerA);
     const playerB = ensureUuid(match.playerB);
     const winner = match.winner ? ensureUuid(match.winner) : null;
     const seasonId = match.seasonId ? ensureUuid(match.seasonId) : null;
     
-    console.log("Saving match to Supabase with IDs:", {
+    console.log("Przygotowane ID dla meczu:", {
+      matchId,
       playerA,
       playerB,
       winner,
-      seasonId,
-      matchId: match.id
+      seasonId
     });
+
+    // Upewnij się, że profile graczy istnieją
+    await createProfileIfNotExists(playerA, match.playerAName || 'Gracz A');
+    await createProfileIfNotExists(playerB, match.playerBName || 'Gracz B');
+    if (winner) {
+      const winnerName = winner === playerA ? match.playerAName : match.playerBName;
+      await createProfileIfNotExists(winner, winnerName || 'Zwycięzca');
+    }
+    
+    console.log("Zapisywanie meczu do Supabase po stworzeniu profili");
     
     const { error } = await supabase
       .from('matches')
       .upsert({
-        id: match.id,
+        id: matchId,
         date: match.date,
         player_a: playerA,
         player_b: playerB,
@@ -187,8 +255,10 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       });
       
     if (error) {
-      console.error("Error details:", error);
+      console.error("Szczegółowy błąd zapisu meczu:", error);
       throw error;
+    } else {
+      console.log("Mecz zapisany pomyślnie w Supabase:", matchId);
     }
   } catch (error) {
     console.error("Błąd podczas zapisywania meczu do Supabase:", error);

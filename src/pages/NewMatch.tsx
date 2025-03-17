@@ -37,11 +37,17 @@ const NewMatch = () => {
       return;
     }
 
+    const opponentUser = users.find(user => user.id === opponent);
+    const currentPlayerName = currentUser.nick || 'Gracz A';
+    const opponentPlayerName = opponentUser?.nick || 'Gracz B';
+
     const newMatch: Match = {
       id: uuidv4(),
       date: new Date().toISOString(),
       playerA: currentUser.id,
       playerB: opponent,
+      playerAName: currentPlayerName,
+      playerBName: opponentPlayerName,
       games: [],
       winner: '',
       timeElapsed: 0,
