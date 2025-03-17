@@ -69,6 +69,8 @@ const MatchView = () => {
       date: match.date,
       playerA: match.playerA,
       playerB: match.playerB,
+      playerAName: playerA?.nick || 'Gracz A',
+      playerBName: playerB?.nick || 'Gracz B',
       games: finalGames, // Use the finalGames array which includes all finished games
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
@@ -76,7 +78,7 @@ const MatchView = () => {
       gamesToWin: match.gamesToWin
     };
     
-    console.log('Saving match:', completedMatch);
+    console.log('Saving match with player names:', completedMatch);
     
     // Save the match to the data store
     addMatch(completedMatch);

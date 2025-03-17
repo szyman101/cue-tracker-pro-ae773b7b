@@ -25,6 +25,8 @@ export interface Match {
   date: string;
   playerA: string; // user id
   playerB: string; // user id
+  playerAName?: string; // player A nickname
+  playerBName?: string; // player B nickname
   games: GameResult[];
   winner: string; // user id or "tie"
   seasonId?: string;

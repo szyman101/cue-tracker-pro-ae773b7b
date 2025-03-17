@@ -42,11 +42,13 @@ const MatchHistory = () => {
               {sortedMatches.map((match) => {
                 const isPlayerA = match.playerA === currentUser?.id;
                 const opponentId = isPlayerA ? match.playerB : match.playerA;
-                const opponent = getUserById(opponentId);
+                const opponentName = isPlayerA 
+                  ? match.playerBName || getUserById(opponentId)?.nick || "Nieznany przeciwnik"
+                  : match.playerAName || getUserById(opponentId)?.nick || "Nieznany przeciwnik";
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
                 
                 console.log(`Match ${match.id} games:`, match.games);
-                console.log(`Opponent info:`, opponent);
+                console.log(`Opponent name:`, opponentName);
                 
                 // Count game wins (not score points) for proper display
                 const userWins = match.games.filter(g => 
@@ -66,7 +68,7 @@ const MatchHistory = () => {
                 return (
                   <TableRow key={match.id}>
                     <TableCell>{new Date(match.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{opponent ? opponent.nick : "Nieznany przeciwnik"}</TableCell>
+                    <TableCell>{opponentName}</TableCell>
                     <TableCell>{gameTypes}</TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>
