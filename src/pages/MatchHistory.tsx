@@ -16,6 +16,8 @@ const MatchHistory = () => {
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
+  console.log("Match history data:", sortedMatches);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <h1 className="text-3xl font-bold">Historia meczów</h1>
@@ -43,6 +45,8 @@ const MatchHistory = () => {
                 const opponent = getUserById(opponentId);
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
                 
+                console.log(`Match ${match.id} games:`, match.games);
+                
                 // Calculate total game wins from all games in the match
                 const userWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
@@ -52,6 +56,8 @@ const MatchHistory = () => {
                   (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
                 ).length;
                 
+                console.log(`User wins: ${userWins}, Opponent wins: ${opponentWins}`);
+                
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
                 const isWinner = match.winner === currentUser?.id;
@@ -59,7 +65,7 @@ const MatchHistory = () => {
                 return (
                   <TableRow key={match.id}>
                     <TableCell>{new Date(match.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{opponent?.nick || "Nieznany"}</TableCell>
+                    <TableCell>{opponent?.nick || "Nieznany przeciwnik"}</TableCell>
                     <TableCell>{gameTypes}</TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>

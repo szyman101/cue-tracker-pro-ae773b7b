@@ -41,24 +41,23 @@ const MatchView = () => {
 
   const endMatch = () => {
     // First, finish the current game if there's a score
+    let finalGames = [...games];
     if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
       const winner = currentGame.scoreA > currentGame.scoreB ? 'A' : 'B';
-      finishCurrentGame(winner);
-    }
-    
-    // Need to get the latest games array after potentially finishing the current game
-    const finalGames = [...games];
-    if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
-      const winner = currentGame.scoreA > currentGame.scoreB ? 'A' : 'B';
-      finalGames.push({
+      const finishedCurrentGame = {
         ...currentGame,
         winner
-      });
+      };
+      finalGames = [...finalGames, finishedCurrentGame];
     }
+    
+    console.log("Ending match with games:", finalGames);
     
     // Calculate winner based on wins
     const finalWinsA = finalGames.filter(g => g.winner === 'A').length;
     const finalWinsB = finalGames.filter(g => g.winner === 'B').length;
+    console.log(`Final score - Player A: ${finalWinsA}, Player B: ${finalWinsB}`);
+    
     const matchWinner = finalWinsA > finalWinsB ? playerA?.id : finalWinsB > finalWinsA ? playerB?.id : 'tie';
     
     // Calculate elapsed time in seconds
