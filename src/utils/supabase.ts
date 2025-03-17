@@ -7,9 +7,10 @@ import { Json } from "@/integrations/supabase/types";
 // Włączenie funkcji realtime dla tabel
 const enableRealtimeForTable = async (tableName: string) => {
   try {
+    // Fixed type error by using a proper type for the parameter
     const { error } = await supabase.rpc('supabase_functions.enable_realtime', {
       table_name: tableName
-    });
+    } as { table_name: string });
     
     if (error) {
       console.error(`Błąd podczas włączania realtime dla tabeli ${tableName}:`, error);
@@ -40,6 +41,18 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
     }
     
     return data.map(match => {
+      // Fixed type conversion issue by properly casting the data
+      const gamesData = match.games as unknown;
+      const games = Array.isArray(gamesData) 
+        ? gamesData.map(game => ({
+            type: (game as any).type as GameType,
+            scoreA: (game as any).scoreA as number,
+            scoreB: (game as any).scoreB as number,
+            winner: (game as any).winner as string,
+            breakAndRun: (game as any).breakAndRun as boolean | undefined
+          })) 
+        : [];
+      
       return {
         id: match.id,
         date: match.date,
@@ -47,7 +60,7 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
         playerB: match.player_b,
         playerAName: match.player_a_name || '',
         playerBName: match.player_b_name || '',
-        games: match.games as GameResult[] || [],
+        games: games,
         winner: match.winner || '',
         timeElapsed: match.time_elapsed || 0,
         seasonId: match.season_id || undefined,
@@ -73,12 +86,15 @@ export const fetchSeasonsFromSupabase = async (): Promise<Season[]> => {
     }
     
     return data.map(season => {
+      // Added proper type conversion for game_types array
+      const gameTypes = season.game_types as unknown as GameType[];
+      
       return {
         id: season.id,
         name: season.name,
         startDate: season.start_date,
         endDate: season.end_date || undefined,
-        gameTypes: season.game_types as GameType[],
+        gameTypes: gameTypes,
         matchesToWin: season.matches_to_win,
         breakRule: season.break_rule as "winner" | "alternate",
         prize: season.prize || undefined,
