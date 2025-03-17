@@ -15,7 +15,7 @@ const Logo = ({ className, size = "medium", showText = true, rounded = false }: 
     small: "h-12 w-12", // Zwiększono z h-8 w-8
     medium: "h-16 w-16", // Zwiększono z h-12 w-12
     large: "h-24 w-24", // Zwiększono z h-16 w-16
-    xl: "h-48 w-48", // Dodano ekstra duży rozmiar (2x większy niż large)
+    xl: "h-60 w-60", // Zwiększono z h-48 w-48 do 60x60 pixels
   };
 
   return (
