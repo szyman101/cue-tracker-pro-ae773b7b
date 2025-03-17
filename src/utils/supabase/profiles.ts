@@ -36,7 +36,8 @@ export const createProfileIfNotExists = async (userId: string, nickname: string)
       console.log("Profile data to create:", {
         id: userId,
         nick: nickname || 'Player',
-        role: 'player'
+        role: 'player',
+        first_name: null // Explicitly add first_name as null to match ProfilesTable type
       });
       
       // Use upsert to either update or create the profile
@@ -45,7 +46,8 @@ export const createProfileIfNotExists = async (userId: string, nickname: string)
         .upsert({
           id: userId,
           nick: nickname || 'Player',
-          role: 'player'
+          role: 'player',
+          first_name: null // Include first_name field to satisfy the ProfilesTable type
         }, {
           // Disable foreign key checks to bypass the auth.users constraint
           ignoreDuplicates: true,
