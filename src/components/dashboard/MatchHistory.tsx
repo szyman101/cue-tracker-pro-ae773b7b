@@ -23,8 +23,8 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
 }) => {
   const { clearMatches } = useData();
 
-  const handleClearHistory = () => {
-    clearMatches();
+  const handleClearHistory = async () => {
+    await clearMatches();
     toast({
       title: "Historia wyczyszczona",
       description: "Wszystkie mecze zostały usunięte",

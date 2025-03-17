@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -21,10 +20,8 @@ const MatchHistory = () => {
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  console.log("Match history data:", sortedMatches);
-
-  const handleClearHistory = () => {
-    clearMatches();
+  const handleClearHistory = async () => {
+    await clearMatches();
     toast({
       title: "Historia wyczyszczona",
       description: "Wszystkie mecze zostały usunięte",

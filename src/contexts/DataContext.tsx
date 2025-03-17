@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Match, Season, GameType } from "../types";
 import { initialUsers } from "../data/initialData";
+import * as db from "../utils/db";
 
 interface DataContextType {
   users: User[];
@@ -31,25 +32,68 @@ export const useData = () => {
   return context;
 };
 
-// Load data from localStorage or use empty arrays as defaults
-const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
-  const storedData = localStorage.getItem(key);
-  return storedData ? JSON.parse(storedData) : defaultValue;
-};
-
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users] = useState<User[]>(initialUsers);
-  const [matches, setMatches] = useState<Match[]>(loadFromStorage('matches', []));
-  const [seasons, setSeasons] = useState<Season[]>(loadFromStorage('seasons', []));
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Save data to localStorage when it changes
+  // Ładowanie danych z IndexedDB przy inicjalizacji
   useEffect(() => {
-    localStorage.setItem('matches', JSON.stringify(matches));
-  }, [matches]);
+    const loadData = async () => {
+      try {
+        // Inicjalizacja bazy danych
+        await db.initDB();
+        
+        // Pobieranie danych
+        const loadedMatches = await db.getMatches();
+        const loadedSeasons = await db.getSeasons();
+        
+        setMatches(loadedMatches as Match[]);
+        setSeasons(loadedSeasons as Season[]);
+      } catch (error) {
+        console.error("Błąd podczas ładowania danych:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    loadData();
+  }, []);
+
+  // Zapisywanie meczów do IndexedDB gdy się zmienią
   useEffect(() => {
-    localStorage.setItem('seasons', JSON.stringify(seasons));
-  }, [seasons]);
+    if (isLoading) return;
+    
+    const saveMatches = async () => {
+      try {
+        for (const match of matches) {
+          await db.addMatch(match);
+        }
+      } catch (error) {
+        console.error("Błąd podczas zapisywania meczów:", error);
+      }
+    };
+
+    saveMatches();
+  }, [matches, isLoading]);
+
+  // Zapisywanie sezonów do IndexedDB gdy się zmienią
+  useEffect(() => {
+    if (isLoading) return;
+    
+    const saveSeasons = async () => {
+      try {
+        for (const season of seasons) {
+          await db.addSeason(season);
+        }
+      } catch (error) {
+        console.error("Błąd podczas zapisywania sezonów:", error);
+      }
+    };
+
+    saveSeasons();
+  }, [seasons, isLoading]);
 
   const getUserById = (id: string) => {
     return users.find(user => user.id === id);
@@ -74,16 +118,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addMatch = (match: Match) => {
-    // If the match already exists, update it instead of adding a new one
     setMatches(prev => {
       const matchIndex = prev.findIndex(m => m.id === match.id);
       if (matchIndex >= 0) {
-        // Replace the existing match
+        // Zastąp istniejący mecz
         const updatedMatches = [...prev];
         updatedMatches[matchIndex] = match;
         return updatedMatches;
       } else {
-        // Add as a new match
+        // Dodaj jako nowy mecz
         return [...prev, match];
       }
     });
@@ -97,7 +140,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSeasons(prev => 
       prev.map(season => {
         if (season.id === seasonId) {
-          // Only add the match ID if it doesn't already exist in the matches array
+          // Dodaj ID meczu tylko jeśli nie istnieje już w tablicy meczów
           if (!season.matches.includes(matchId)) {
             return { ...season, matches: [...season.matches, matchId] };
           }
@@ -107,39 +150,49 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  // Clear all matches from the state and localStorage
-  const clearMatches = () => {
+  // Wyczyść wszystkie mecze
+  const clearMatches = async () => {
+    await db.clearMatches();
     setMatches([]);
-    localStorage.removeItem('matches');
   };
 
-  // Clear all seasons from the state and localStorage
-  const clearSeasons = () => {
+  // Wyczyść wszystkie sezony
+  const clearSeasons = async () => {
+    await db.clearSeasons();
     setSeasons([]);
-    localStorage.removeItem('seasons');
   };
   
-  // Delete a specific season by ID
-  const deleteSeason = (seasonId: string) => {
+  // Usuń konkretny sezon po ID
+  const deleteSeason = async (seasonId: string) => {
+    await db.deleteSeason(seasonId);
     setSeasons(prev => prev.filter(season => season.id !== seasonId));
   };
   
-  // End a season (mark as inactive)
+  // Zakończ sezon (oznacz jako nieaktywny)
   const endSeason = (seasonId: string, winnerId?: string) => {
     setSeasons(prev => 
       prev.map(season => {
         if (season.id === seasonId) {
-          return { 
+          const updatedSeason = { 
             ...season, 
             active: false,
             endDate: new Date().toISOString(),
             winner: winnerId || season.winner
           };
+          
+          // Zapisz zaktualizowany sezon w bazie danych
+          db.addSeason(updatedSeason);
+          
+          return updatedSeason;
         }
         return season;
       })
     );
   };
+
+  if (isLoading) {
+    return <div>Ładowanie danych...</div>;
+  }
 
   return (
     <DataContext.Provider
