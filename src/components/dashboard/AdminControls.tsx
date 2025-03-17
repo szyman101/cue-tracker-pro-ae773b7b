@@ -31,21 +31,20 @@ const AdminControls: React.FC = () => {
               id="data-source" 
               checked={isUsingSupabase}
               onCheckedChange={toggleDataSource}
+              disabled // Wyłączenie możliwości przełączania
             />
             <Label htmlFor="data-source">
               {isUsingSupabase ? 'Supabase (online)' : 'IndexedDB (lokalne)'}
             </Label>
           </div>
           
-          {isUsingSupabase && (
-            <Button 
-              variant="outline" 
-              onClick={syncWithSupabase}
-              className="w-full"
-            >
-              Synchronizuj dane z Supabase
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            onClick={syncWithSupabase}
+            className="w-full"
+          >
+            Synchronizuj dane z Supabase
+          </Button>
         </div>
         
         {/* Migracja danych */}

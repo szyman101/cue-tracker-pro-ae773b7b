@@ -3,6 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Match, Season } from "@/types";
 import * as db from "./db";
 
+// Włączenie funkcji realtime dla tabel
+const enableRealtimeForTable = async (tableName: string) => {
+  try {
+    const { error } = await supabase.rpc('supabase_functions.enable_realtime', {
+      table_name: tableName
+    });
+    
+    if (error) {
+      console.error(`Błąd podczas włączania realtime dla tabeli ${tableName}:`, error);
+    } else {
+      console.log(`Realtime włączone dla tabeli ${tableName}`);
+    }
+  } catch (error) {
+    console.error(`Błąd podczas włączania realtime:`, error);
+  }
+};
+
+// Uruchom włączenie realtime dla głównych tabel - można wywołać raz przy starcie aplikacji
+export const setupRealtimeForTables = async () => {
+  await enableRealtimeForTable('matches');
+  await enableRealtimeForTable('seasons');
+  await enableRealtimeForTable('season_matches');
+};
+
 // Pobieranie meczy z Supabase
 export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
   try {

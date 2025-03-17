@@ -1,9 +1,10 @@
-
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { User, Match, Season } from "../types";
 import { initialUsers } from "../data/initialData";
 import * as db from "../utils/db";
 import * as supabaseUtils from "../utils/supabase";
+import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DataContextType {
   users: User[];
@@ -41,15 +42,66 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [matches, setMatches] = useState<Match[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUsingSupabase, setIsUsingSupabase] = useState(false);
+  const [isUsingSupabase, setIsUsingSupabase] = useState(true); // Domyślnie Supabase
+
+  // Subskrypcja do zmian w czasie rzeczywistym
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+    
+    // Kanał nasłuchujący zmian w mecach
+    const matchesChannel = supabase
+      .channel('public:matches')
+      .on('postgres_changes', {
+        event: '*', 
+        schema: 'public', 
+        table: 'matches'
+      }, (payload) => {
+        console.log('Zmiana w tabeli matches:', payload);
+        syncWithSupabase();
+      })
+      .subscribe();
+      
+    // Kanał nasłuchujący zmian w sezonach
+    const seasonsChannel = supabase
+      .channel('public:seasons')
+      .on('postgres_changes', {
+        event: '*', 
+        schema: 'public', 
+        table: 'seasons'
+      }, (payload) => {
+        console.log('Zmiana w tabeli seasons:', payload);
+        syncWithSupabase();
+      })
+      .subscribe();
+      
+    // Kanał nasłuchujący zmian w relacjach sezon-mecz
+    const seasonMatchesChannel = supabase
+      .channel('public:season_matches')
+      .on('postgres_changes', {
+        event: '*', 
+        schema: 'public', 
+        table: 'season_matches'
+      }, (payload) => {
+        console.log('Zmiana w tabeli season_matches:', payload);
+        syncWithSupabase();
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(matchesChannel);
+      supabase.removeChannel(seasonsChannel);
+      supabase.removeChannel(seasonMatchesChannel);
+    };
+  }, [isUsingSupabase, syncWithSupabase]);
 
   // Funkcja do przełączania źródła danych
   const toggleDataSource = () => {
+    // Funkcja pozostawiona dla kompletności, ale przełącznik jest wyłączony w UI
     setIsUsingSupabase(!isUsingSupabase);
   };
 
   // Funkcja do synchronizacji danych z Supabase
-  const syncWithSupabase = async () => {
+  const syncWithSupabase = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -78,12 +130,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         matches: supabaseMatches.length,
         seasons: enhancedSeasons.length
       });
+      
+      toast({
+        title: "Dane zaktualizowane",
+        description: "Dane zostały pomyślnie zsynchronizowane z Supabase.",
+        duration: 3000
+      });
     } catch (error) {
       console.error("Błąd podczas synchronizacji z Supabase:", error);
+      toast({
+        title: "Błąd synchronizacji",
+        description: "Nie udało się zsynchronizować danych z Supabase.",
+        variant: "destructive",
+        duration: 5000
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Load data from source on initialization and when source changes
   useEffect(() => {
@@ -119,7 +183,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     loadData();
-  }, [isUsingSupabase]);
+  }, [isUsingSupabase, syncWithSupabase]);
 
   // Save matches to selected data source when they change
   useEffect(() => {
@@ -212,28 +276,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     
-    // Zapisz mecz również do Supabase jeśli używamy Supabase
-    if (isUsingSupabase) {
-      try {
+    // Zapisz mecz do odpowiedniego źródła danych
+    try {
+      if (isUsingSupabase) {
         await supabaseUtils.saveMatchToSupabase(match);
         console.log("Mecz zapisany do Supabase:", match.id);
-      } catch (error) {
-        console.error("Błąd podczas zapisywania meczu do Supabase:", error);
+      } else {
+        await db.addMatch(match);
+        console.log("Mecz zapisany do IndexedDB:", match.id);
       }
+    } catch (error) {
+      console.error("Błąd podczas zapisywania meczu:", error);
+      toast({
+        title: "Błąd zapisu",
+        description: "Nie udało się zapisać meczu. Spróbuj ponownie.",
+        variant: "destructive"
+      });
     }
   };
 
   const addSeason = async (season: Season) => {
     setSeasons(prev => prev ? [...prev, season] : [season]);
     
-    // Zapisz sezon również do Supabase jeśli używamy Supabase
-    if (isUsingSupabase) {
-      try {
+    // Zapisz sezon do odpowiedniego źródła danych
+    try {
+      if (isUsingSupabase) {
         await supabaseUtils.saveSeasonToSupabase(season);
         console.log("Sezon zapisany do Supabase:", season.id);
-      } catch (error) {
-        console.error("Błąd podczas zapisywania sezonu do Supabase:", error);
+      } else {
+        await db.addSeason(season);
+        console.log("Sezon zapisany do IndexedDB:", season.id);
       }
+    } catch (error) {
+      console.error("Błąd podczas zapisywania sezonu:", error);
+      toast({
+        title: "Błąd zapisu",
+        description: "Nie udało się zapisać sezonu. Spróbuj ponownie.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -252,48 +332,113 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     });
     
-    // Zaktualizuj relację sezon-mecz w Supabase jeśli używamy Supabase
-    if (isUsingSupabase) {
-      try {
+    // Zaktualizuj relację sezon-mecz w odpowiednim źródle danych
+    try {
+      if (isUsingSupabase) {
         await supabaseUtils.saveSeasonMatchRelation(seasonId, matchId);
         console.log("Relacja sezon-mecz zapisana do Supabase:", { seasonId, matchId });
-      } catch (error) {
-        console.error("Błąd podczas zapisywania relacji sezon-mecz do Supabase:", error);
+      } else {
+        // W przypadku IndexedDB relacja jest przechowywana bezpośrednio w obiekcie sezonu
+        const updatedSeason = seasons.find(s => s.id === seasonId);
+        if (updatedSeason) {
+          await db.addSeason(updatedSeason);
+        }
       }
+    } catch (error) {
+      console.error("Błąd podczas aktualizacji relacji sezon-mecz:", error);
+      toast({
+        title: "Błąd zapisu",
+        description: "Nie udało się zaktualizować relacji sezon-mecz. Spróbuj ponownie.",
+        variant: "destructive"
+      });
     }
   };
 
   // Clear all matches
   const clearMatches = async () => {
-    if (isUsingSupabase) {
-      // Tutaj można dodać logikę czyszczenia danych w Supabase, ale wymaga to ostrożności
-      console.warn("Czyszczenie wszystkich meczy w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
-    } else {
-      await db.clearMatches();
+    try {
+      if (isUsingSupabase) {
+        // Tutaj można dodać logikę czyszczenia danych w Supabase, ale wymaga to ostrożności
+        console.warn("Czyszczenie wszystkich meczy w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
+        toast({
+          title: "Operacja niemożliwa",
+          description: "Czyszczenie danych w Supabase jest zablokowane ze względów bezpieczeństwa.",
+          variant: "destructive"
+        });
+      } else {
+        await db.clearMatches();
+        setMatches([]);
+        toast({
+          title: "Dane wyczyszczone",
+          description: "Wszystkie mecze zostały usunięte.",
+        });
+      }
+    } catch (error) {
+      console.error("Błąd podczas czyszczenia meczy:", error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się wyczyścić danych meczy.",
+        variant: "destructive"
+      });
     }
-    setMatches([]);
   };
 
   // Clear all seasons
   const clearSeasons = async () => {
-    if (isUsingSupabase) {
-      // Tutaj można dodać logikę czyszczenia danych w Supabase, ale wymaga to ostrożności
-      console.warn("Czyszczenie wszystkich sezonów w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
-    } else {
-      await db.clearSeasons();
+    try {
+      if (isUsingSupabase) {
+        // Tutaj można dodać logikę czyszczenia danych w Supabase, ale wymaga to ostrożności
+        console.warn("Czyszczenie wszystkich sezonów w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
+        toast({
+          title: "Operacja niemożliwa",
+          description: "Czyszczenie danych w Supabase jest zablokowane ze względów bezpieczeństwa.",
+          variant: "destructive"
+        });
+      } else {
+        await db.clearSeasons();
+        setSeasons([]);
+        toast({
+          title: "Dane wyczyszczone",
+          description: "Wszystkie sezony zostały usunięte.",
+        });
+      }
+    } catch (error) {
+      console.error("Błąd podczas czyszczenia sezonów:", error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się wyczyścić danych sezonów.",
+        variant: "destructive"
+      });
     }
-    setSeasons([]);
   };
   
   // Delete specific season by ID
   const deleteSeason = async (seasonId: string) => {
-    if (isUsingSupabase) {
-      // Tutaj należałoby dodać usuwanie sezonu z Supabase
-      console.warn("Usuwanie sezonu w Supabase nie jest jeszcze zaimplementowane");
-    } else {
-      await db.deleteSeason(seasonId);
+    try {
+      if (isUsingSupabase) {
+        // Tutaj należałoby dodać usuwanie sezonu z Supabase
+        console.warn("Usuwanie sezonu w Supabase nie jest jeszcze zaimplementowane");
+        toast({
+          title: "Operacja niemożliwa",
+          description: "Usuwanie sezonów w Supabase jest obecnie niedostępne.",
+          variant: "destructive"
+        });
+      } else {
+        await db.deleteSeason(seasonId);
+        setSeasons(prev => prev ? prev.filter(season => season.id !== seasonId) : []);
+        toast({
+          title: "Sezon usunięty",
+          description: "Sezon został pomyślnie usunięty.",
+        });
+      }
+    } catch (error) {
+      console.error("Błąd podczas usuwania sezonu:", error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć sezonu.",
+        variant: "destructive"
+      });
     }
-    setSeasons(prev => prev ? prev.filter(season => season.id !== seasonId) : []);
   };
   
   // End season (mark as inactive)
@@ -311,12 +456,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           
           // Save updated season to database
-          if (isUsingSupabase) {
-            supabaseUtils.saveSeasonToSupabase(updatedSeason).catch(error => {
-              console.error("Błąd podczas zakończenia sezonu w Supabase:", error);
-            });
-          } else {
-            db.addSeason(updatedSeason);
+          try {
+            if (isUsingSupabase) {
+              supabaseUtils.saveSeasonToSupabase(updatedSeason).catch(error => {
+                console.error("Błąd podczas zakończenia sezonu w Supabase:", error);
+                toast({
+                  title: "Błąd",
+                  description: "Nie udało się zakończyć sezonu. Spróbuj ponownie.",
+                  variant: "destructive"
+                });
+              });
+            } else {
+              db.addSeason(updatedSeason);
+            }
+          } catch (error) {
+            console.error("Błąd podczas zakończenia sezonu:", error);
           }
           
           return updatedSeason;
