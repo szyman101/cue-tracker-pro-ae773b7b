@@ -35,6 +35,14 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     // First, try to save locally to ensure data isn't lost even if Supabase save fails
     await saveLocalMatch(match);
     
+    // Ensure the profiles exist before saving the match
+    await createProfileIfNotExists(playerA, playerAName);
+    await createProfileIfNotExists(playerB, playerBName);
+    if (winner) {
+      const winnerName = winner === playerA ? playerAName : playerBName;
+      await createProfileIfNotExists(winner, winnerName);
+    }
+    
     console.log("Saving match to Supabase");
     
     // Prepare match data for saving

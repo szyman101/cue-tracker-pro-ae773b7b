@@ -9,6 +9,28 @@ export type Database = {
         Returns: boolean;
       };
     };
+    Tables: {
+      profiles: {
+        Row: ProfilesTable;
+        Insert: ProfilesTable;
+        Update: Partial<ProfilesTable>;
+      };
+      matches: {
+        Row: MatchesTable;
+        Insert: Omit<MatchesTable, 'id'> & { id?: string };
+        Update: Partial<MatchesTable>;
+      };
+      seasons: {
+        Row: SeasonsTable;
+        Insert: Omit<SeasonsTable, 'id'> & { id?: string };
+        Update: Partial<SeasonsTable>;
+      };
+      season_matches: {
+        Row: SeasonMatchesTable;
+        Insert: SeasonMatchesTable;
+        Update: Partial<SeasonMatchesTable>;
+      };
+    };
   };
 };
 
