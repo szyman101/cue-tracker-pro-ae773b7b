@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GameType, Match } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from '@/hooks/use-toast';
 
 const NewMatch = () => {
   const navigate = useNavigate();
@@ -26,7 +27,14 @@ const NewMatch = () => {
   const availableGameTypes = selectedSeason?.gameTypes || ['8-ball', '9-ball', '10-ball'];
 
   const handleStartMatch = () => {
-    if (!currentUser || !opponent) return;
+    if (!currentUser || !opponent) {
+      toast({
+        title: "Błąd",
+        description: "Wybierz przeciwnika aby rozpocząć mecz",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const newMatch: Match = {
       id: uuidv4(),
@@ -73,7 +81,7 @@ const NewMatch = () => {
                 <SelectValue placeholder="Wybierz sezon (opcjonalnie)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Mecz towarzyski</SelectItem>
+                <SelectItem value="none">Mecz towarzyski</SelectItem>
                 {activeSeasons.map((season) => (
                   <SelectItem key={season.id} value={season.id}>
                     {season.name}

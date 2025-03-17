@@ -45,5 +45,6 @@ export interface Season {
   active: boolean;
   matches: string[]; // match ids
   winner?: string; // user id
-  matchesPerGame?: number; // Adding this property to fix the error
+  gamesPerMatch?: number; // Changed from matchesPerGame to gamesPerMatch to match usage in data
+  stake?: number; // Adding stake field which is used in initialData
 }
