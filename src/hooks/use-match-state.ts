@@ -131,8 +131,10 @@ export const useMatchState = ({ match }: UseMatchStateProps) => {
     
     // Update break for next game based on rule
     if (breakRule === 'winner') {
+      // If winner breaks rule is active, the winner of the game gets the break
       setNextBreak(winner);
     } else if (breakRule === 'alternate') {
+      // If alternate breaks rule is active, alternate the break
       setNextBreak(nextBreak === 'A' ? 'B' : 'A');
     }
   };
