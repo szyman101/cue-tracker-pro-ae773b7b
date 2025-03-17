@@ -1,15 +1,6 @@
-
 import { User, Match, Season, GameType } from "../types";
 
 export const initialUsers: User[] = [
-  {
-    id: "admin1",
-    firstName: "Administrator",
-    login: "admin",
-    password: "1234",
-    nick: "Admin",
-    role: "admin"
-  },
   {
     id: "user1",
     firstName: "Kamil",
@@ -199,7 +190,6 @@ export const initialSeasons: Season[] = [
   }
 ];
 
-// Tylko kilka reprezentatywnych meczów, całkowite dane są zbyt obszerne
 export const initialMatches: Match[] = [
   {
     id: "match1",

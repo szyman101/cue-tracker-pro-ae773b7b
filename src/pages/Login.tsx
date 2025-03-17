@@ -148,7 +148,6 @@ const Login = () => {
         <CardFooter className="flex justify-center">
           <div className="text-sm text-muted-foreground text-center">
             Demo logowania:<br />
-            Admin: admin/1234<br />
             Gracze: Kimoz/kimoz, Tomek/tomek
           </div>
         </CardFooter>

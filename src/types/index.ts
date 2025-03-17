@@ -30,6 +30,7 @@ export interface Match {
   seasonId?: string;
   timeElapsed?: number; // in seconds
   notes?: string;
+  gamesToWin?: number; // number of games needed to win the match
 }
 
 export interface Season {

@@ -30,8 +30,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
+      const user = JSON.parse(savedUser);
+      // Make sure the user still exists in our data
+      if (initialUsers.some(u => u.id === user.id)) {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } else {
+        // Clear local storage if user doesn't exist anymore
+        localStorage.removeItem("currentUser");
+      }
     }
   }, []);
 

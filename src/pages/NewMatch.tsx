@@ -12,10 +12,13 @@ import { v4 as uuidv4 } from 'uuid';
 const NewMatch = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { users } = useData();
+  const { users, getActiveSeasons } = useData();
   const [opponent, setOpponent] = useState<string>('');
   const [gameType, setGameType] = useState<GameType>('8-ball');
+  const [gamesToWin, setGamesToWin] = useState<string>('3');
   
+  const activeSeasons = getActiveSeasons();
+  const activeSeason = activeSeasons.length > 0 ? activeSeasons[0] : null;
   const availableOpponents = users.filter(user => user.id !== currentUser?.id);
 
   const handleStartMatch = () => {
@@ -28,7 +31,9 @@ const NewMatch = () => {
       playerB: opponent,
       games: [],
       winner: '',
-      timeElapsed: 0
+      timeElapsed: 0,
+      seasonId: activeSeason?.id,
+      gamesToWin: parseInt(gamesToWin)
     };
 
     navigate(`/match/${newMatch.id}`, { state: { match: newMatch } });
@@ -67,6 +72,24 @@ const NewMatch = () => {
                 <SelectItem value="8-ball">8-ball</SelectItem>
                 <SelectItem value="9-ball">9-ball</SelectItem>
                 <SelectItem value="10-ball">10-ball</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Do ilu wygranych</label>
+            <Select value={gamesToWin} onValueChange={setGamesToWin}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="4">4</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="7">7</SelectItem>
+                <SelectItem value="9">9</SelectItem>
               </SelectContent>
             </Select>
           </div>

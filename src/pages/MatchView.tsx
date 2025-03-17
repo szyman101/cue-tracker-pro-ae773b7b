@@ -1,16 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { CircleDot, Flag, Plus, Minus, Timer } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { CircleDot, Flag, Plus, Minus, Timer, Trophy } from 'lucide-react';
 import { GameResult, Match } from '@/types';
 import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
 const MatchView = () => {
   const location = useLocation();
-  const { getUserById } = useData();
+  const navigate = useNavigate();
+  const { getUserById, getActiveSeasons } = useData();
   const match = location.state?.match as Match;
   
   const [currentGame, setCurrentGame] = useState<GameResult>({
@@ -26,9 +28,28 @@ const MatchView = () => {
   const [breakRunsB, setBreakRunsB] = useState<number>(0);
   const [startTime] = useState<Date>(new Date());
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [games, setGames] = useState<GameResult[]>(match.games || []);
+  const [winsA, setWinsA] = useState<number>(0);
+  const [winsB, setWinsB] = useState<number>(0);
 
   const playerA = getUserById(match.playerA);
   const playerB = getUserById(match.playerB);
+  const activeSeasons = getActiveSeasons();
+  const activeSeason = activeSeasons.length > 0 ? activeSeasons[0] : null;
+
+  // Calculate wins for each player
+  useEffect(() => {
+    let playerAWins = 0;
+    let playerBWins = 0;
+    
+    games.forEach(game => {
+      if (game.winner === 'A') playerAWins++;
+      if (game.winner === 'B') playerBWins++;
+    });
+    
+    setWinsA(playerAWins);
+    setWinsB(playerBWins);
+  }, [games]);
 
   // Timer effect
   useEffect(() => {
@@ -55,12 +76,12 @@ const MatchView = () => {
       
       if (increment) {
         newScore += 1;
-        // Update next break based on break rule
-        if (breakRule === 'winner') {
-          setNextBreak(player);
-        } else if (breakRule === 'alternate') {
-          // Fixed: For alternate, always switch to the other player regardless of who scored
+        
+        // Handle break rule for next game
+        if (breakRule === 'alternate') {
           setNextBreak(nextBreak === 'A' ? 'B' : 'A');
+        } else if (breakRule === 'winner') {
+          setNextBreak(player);
         }
       } else {
         newScore = Math.max(0, newScore - 1);
@@ -91,7 +112,6 @@ const MatchView = () => {
     if (breakRule === 'winner') {
       setNextBreak(player);
     } else if (breakRule === 'alternate') {
-      // Fixed: For alternate, switch to the other player
       setNextBreak(nextBreak === 'A' ? 'B' : 'A');
     }
   };
@@ -99,6 +119,63 @@ const MatchView = () => {
   const toggleBreakRule = () => {
     setBreakRule(prev => prev === 'winner' ? 'alternate' : 'winner');
   };
+
+  const finishCurrentGame = (winner: 'A' | 'B') => {
+    // Save current game
+    const finishedGame = {
+      ...currentGame,
+      winner
+    };
+    
+    const updatedGames = [...games, finishedGame];
+    setGames(updatedGames);
+    
+    // Reset for next game
+    setCurrentGame({
+      type: currentGame.type,
+      scoreA: 0,
+      scoreB: 0,
+      winner: ''
+    });
+    
+    // Update break for next game based on rule
+    if (breakRule === 'winner') {
+      setNextBreak(winner);
+    } else if (breakRule === 'alternate') {
+      setNextBreak(nextBreak === 'A' ? 'B' : 'A');
+    }
+    
+    toast({
+      title: "Partia zakończona",
+      description: `Wygrał ${winner === 'A' ? playerA?.nick : playerB?.nick}`,
+    });
+  };
+
+  const endMatch = () => {
+    // Calculate winner based on wins
+    const matchWinner = winsA > winsB ? playerA?.id : winsB > winsA ? playerB?.id : 'tie';
+    
+    const updatedMatch: Match = {
+      ...match,
+      games,
+      winner: matchWinner,
+      timeElapsed: Math.floor((currentTime.getTime() - startTime.getTime()) / 1000)
+    };
+    
+    // Here you would save the match to your data store
+    // For now, we'll just show a toast and navigate back
+    toast({
+      title: "Mecz zakończony",
+      description: matchWinner === 'tie' 
+        ? "Mecz zakończył się remisem" 
+        : `Wygrał ${getUserById(matchWinner)?.nick}`,
+    });
+    
+    navigate('/dashboard');
+  };
+
+  const gamesToWin = match.gamesToWin || 3;
+  const isMatchFinished = winsA >= gamesToWin || winsB >= gamesToWin;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -152,6 +229,11 @@ const MatchView = () => {
                   <Minus className="w-5 h-5" />
                 </Button>
               </div>
+              
+              <div className="text-center mt-2">
+                <div className="text-lg font-semibold">Wygrane: {winsA}</div>
+                <div className="text-sm text-muted-foreground">z {gamesToWin} potrzebnych</div>
+              </div>
             </div>
             
             {/* Player B */}
@@ -191,22 +273,79 @@ const MatchView = () => {
                   <Minus className="w-5 h-5" />
                 </Button>
               </div>
+              
+              <div className="text-center mt-2">
+                <div className="text-lg font-semibold">Wygrane: {winsB}</div>
+                <div className="text-sm text-muted-foreground">z {gamesToWin} potrzebnych</div>
+              </div>
             </div>
           </div>
         </CardContent>
+        <CardFooter className="flex justify-between items-center flex-wrap gap-4">
+          <Button variant="outline" onClick={toggleBreakRule}>
+            {breakRule === 'winner' ? 'Rozbija zwycięzca' : 'Rozbicie na zmianę'}
+          </Button>
+          
+          <div className="text-center">
+            <span className="text-sm">Następne rozbicie:</span>
+            <span className="ml-2 font-bold">
+              {nextBreak === 'A' ? playerA?.nick : playerB?.nick}
+            </span>
+          </div>
+          
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="secondary" 
+              className="flex-1"
+              onClick={() => finishCurrentGame('A')}
+            >
+              Wygrywa {playerA?.nick}
+            </Button>
+            <Button 
+              variant="secondary"
+              className="flex-1"
+              onClick={() => finishCurrentGame('B')}
+            >
+              Wygrywa {playerB?.nick}
+            </Button>
+          </div>
+          
+          {isMatchFinished && (
+            <Button 
+              variant="default" 
+              className="w-full flex items-center justify-center gap-2"
+              onClick={endMatch}
+            >
+              <Trophy className="w-5 h-5" />
+              Zakończ mecz
+            </Button>
+          )}
+        </CardFooter>
       </Card>
       
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={toggleBreakRule}>
-          {breakRule === 'winner' ? 'Rozbija zwycięzca' : 'Rozbicie na zmianę'}
-        </Button>
-        <div className="text-center">
-          <span className="text-sm">Następne rozbicie:</span>
-          <span className="ml-2 font-bold">
-            {nextBreak === 'A' ? playerA?.nick : playerB?.nick}
-          </span>
-        </div>
-      </div>
+      {games.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Historia partii</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {games.map((game, index) => (
+                <div key={index} className="flex justify-between p-2 border rounded">
+                  <div>Partia {index + 1} ({game.type})</div>
+                  <div className="font-medium">
+                    {playerA?.nick} {game.scoreA} - {game.scoreB} {playerB?.nick}
+                    {game.breakAndRun && " (BR)"}
+                  </div>
+                  <div>
+                    Wygrał: {game.winner === 'A' ? playerA?.nick : game.winner === 'B' ? playerB?.nick : 'Remis'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
