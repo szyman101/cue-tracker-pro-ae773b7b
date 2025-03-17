@@ -7,9 +7,10 @@ import { Json } from "@/integrations/supabase/types";
 // Włączenie funkcji realtime dla tabel
 const enableRealtimeForTable = async (tableName: string) => {
   try {
+    // Fix: Use the correct type for the parameter
     const { error } = await supabase.rpc('enable_realtime', {
       table_name: tableName
-    });
+    } as { table_name: string });
     
     if (error) {
       console.error(`Błąd podczas włączania realtime dla tabeli ${tableName}:`, error);
