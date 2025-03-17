@@ -1,5 +1,6 @@
 
 // IndexedDB service for persistent storage
+import { Match, Season } from "../types";
 
 // Database configuration
 const DB_NAME = 'billiards_app_db';
@@ -135,19 +136,19 @@ const clearStore = async (storeName: string): Promise<void> => {
 };
 
 // Specific functions for matches
-export const getMatches = async () => getAllItems(STORES.MATCHES);
-export const saveMatch = async (match: any) => putItem(STORES.MATCHES, match);
-export const deleteMatch = async (id: string) => deleteItem(STORES.MATCHES, id);
-export const clearMatches = async () => clearStore(STORES.MATCHES);
+export const getMatches = async (): Promise<Match[]> => getAllItems<Match>(STORES.MATCHES);
+export const saveMatch = async (match: Match): Promise<Match> => putItem<Match>(STORES.MATCHES, match);
+export const deleteMatch = async (id: string): Promise<void> => deleteItem(STORES.MATCHES, id);
+export const clearMatches = async (): Promise<void> => clearStore(STORES.MATCHES);
 
 // Specific functions for seasons
-export const getSeasons = async () => getAllItems(STORES.SEASONS);
-export const saveSeason = async (season: any) => putItem(STORES.SEASONS, season);
-export const deleteSeason = async (id: string) => deleteItem(STORES.SEASONS, id);
-export const clearSeasons = async () => clearStore(STORES.SEASONS);
+export const getSeasons = async (): Promise<Season[]> => getAllItems<Season>(STORES.SEASONS);
+export const saveSeason = async (season: Season): Promise<Season> => putItem<Season>(STORES.SEASONS, season);
+export const deleteSeason = async (id: string): Promise<void> => deleteItem(STORES.SEASONS, id);
+export const clearSeasons = async (): Promise<void> => clearStore(STORES.SEASONS);
 
 // Function to initialize database for first time
-export const initializeDatabase = async () => {
+export const initializeDatabase = async (): Promise<boolean> => {
   try {
     await initDB();
     console.log("Database initialized successfully");

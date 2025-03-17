@@ -48,8 +48,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const loadedMatches = await getMatches();
         const loadedSeasons = await getSeasons();
         
-        setMatches(loadedMatches);
-        setSeasons(loadedSeasons);
+        setMatches(loadedMatches as Match[]);
+        setSeasons(loadedSeasons as Season[]);
       } catch (error) {
         console.error("Error loading data from IndexedDB:", error);
         toast({
