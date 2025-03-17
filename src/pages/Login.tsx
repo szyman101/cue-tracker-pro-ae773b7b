@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { User, KeyRound, Link as LinkIcon, Copy, UserPlus, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login = () => {
   const [login, setLogin] = useState("");
