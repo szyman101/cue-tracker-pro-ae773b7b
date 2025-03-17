@@ -15,6 +15,8 @@ interface DataContextType {
   addMatch: (match: Match) => void;
   addSeason: (season: Season) => void;
   updateSeasonWithMatch: (seasonId: string, matchId: string) => void;
+  clearMatches: () => void;
+  clearSeasons: () => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -103,6 +105,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  // Clear all matches from the state and localStorage
+  const clearMatches = () => {
+    setMatches([]);
+    localStorage.removeItem('matches');
+  };
+
+  // Clear all seasons from the state and localStorage
+  const clearSeasons = () => {
+    setSeasons([]);
+    localStorage.removeItem('seasons');
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -116,7 +130,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getActiveSeasons,
         addMatch,
         addSeason,
-        updateSeasonWithMatch
+        updateSeasonWithMatch,
+        clearMatches,
+        clearSeasons
       }}
     >
       {children}

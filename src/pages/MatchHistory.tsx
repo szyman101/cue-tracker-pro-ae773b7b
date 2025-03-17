@@ -4,10 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
-  const { getUserMatches, getUserById, seasons } = useData();
+  const { getUserMatches, getUserById, seasons, clearMatches } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   
@@ -18,9 +21,36 @@ const MatchHistory = () => {
 
   console.log("Match history data:", sortedMatches);
 
+  const handleClearHistory = () => {
+    clearMatches();
+    toast({
+      title: "Historia wyczyszczona",
+      description: "Wszystkie mecze zostały usunięte",
+    });
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-3xl font-bold">Historia meczów</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Historia meczów</h1>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">Wyczyść historię</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
       
       <Card>
         <CardHeader>

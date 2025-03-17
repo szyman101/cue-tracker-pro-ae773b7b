@@ -5,12 +5,14 @@ import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Calendar, Users, History, Plus } from "lucide-react";
+import { Trophy, Calendar, Users, History, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Dashboard = () => {
   const { currentUser, isAdmin } = useAuth();
-  const { getUserMatches, getUserSeasons, getActiveSeasons } = useData();
+  const { getUserMatches, getUserSeasons, getActiveSeasons, clearSeasons, clearMatches } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   const userSeasons = currentUser ? getUserSeasons(currentUser.id) : [];
@@ -19,6 +21,15 @@ const Dashboard = () => {
   const totalMatchesPlayed = userMatches.length;
   const matchesWon = userMatches.filter(match => match.winner === currentUser?.id).length;
   const winRate = totalMatchesPlayed > 0 ? Math.round((matchesWon / totalMatchesPlayed) * 100) : 0;
+
+  const handleClearAll = () => {
+    clearMatches();
+    clearSeasons();
+    toast({
+      title: "Dane wyczyszczone",
+      description: "Wszystkie mecze i sezony zostały usunięte",
+    });
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -34,9 +45,31 @@ const Dashboard = () => {
             <Link to="/new-season">Nowy Sezon</Link>
           </Button>
           {isAdmin && (
-            <Button variant="outline" asChild>
-              <Link to="/admin">Panel Admina</Link>
-            </Button>
+            <>
+              <Button variant="outline" asChild>
+                <Link to="/admin">Panel Admina</Link>
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Wyczyść dane
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Czy na pewno chcesz wyczyścić wszystkie dane?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ta akcja usunie wszystkie zapisane mecze i sezony. Operacja jest nieodwracalna.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAll}>Tak, wyczyść wszystko</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </div>
