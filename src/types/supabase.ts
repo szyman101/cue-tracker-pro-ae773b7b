@@ -11,3 +11,46 @@ export type Database = {
     };
   };
 };
+
+// Rozszerzenie typów dla tabel Supabase
+export type ProfilesTable = {
+  id: string;
+  nick: string;
+  role: string;
+  first_name: string | null;
+};
+
+export type MatchesTable = {
+  id: string;
+  date: string;
+  player_a: string;
+  player_b: string;
+  games: any;
+  winner: string | null;
+  season_id: string | null;
+  time_elapsed: number | null;
+  games_to_win: number | null;
+  player_a_name: string | null;
+  player_b_name: string | null;
+  notes: string | null;
+};
+
+export type SeasonsTable = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string | null;
+  game_types: string[];
+  matches_to_win: number;
+  break_rule: string;
+  prize: string | null;
+  active: boolean;
+  winner: string | null;
+  games_per_match: number | null;
+  stake: number | null;
+};
+
+export type SeasonMatchesTable = {
+  season_id: string;
+  match_id: string;
+};

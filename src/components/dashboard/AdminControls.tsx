@@ -31,7 +31,6 @@ const AdminControls: React.FC = () => {
               id="data-source" 
               checked={isUsingSupabase}
               onCheckedChange={toggleDataSource}
-              disabled={true} // Wyłączenie możliwości przełączania
             />
             <Label htmlFor="data-source">
               {isUsingSupabase ? 'Supabase (online)' : 'IndexedDB (lokalne)'}

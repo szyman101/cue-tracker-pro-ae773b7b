@@ -1,4 +1,3 @@
-
 import { Match, Season } from "@/types";
 
 // Database name
@@ -212,5 +211,61 @@ export const deleteSeason = async (seasonId: string): Promise<void> => {
   } catch (error) {
     console.error("Failed to delete season:", error);
     throw error;
+  }
+};
+
+// Add a function to migrate matches from IndexedDB to Supabase
+export const migrateMatchesToSupabase = async (
+  saveMatchFunction: (match: Match) => Promise<void>
+): Promise<number> => {
+  try {
+    const matches = await getMatches();
+    let successCount = 0;
+    
+    console.info(`Starting migration of ${matches.length} matches to Supabase`);
+    
+    for (const match of matches) {
+      try {
+        await saveMatchFunction(match);
+        successCount++;
+        console.info(`Successfully migrated match ${match.id} (${successCount}/${matches.length})`);
+      } catch (error) {
+        console.error(`Failed to migrate match ${match.id}:`, error);
+      }
+    }
+    
+    console.info(`Migration completed: ${successCount}/${matches.length} matches migrated`);
+    return successCount;
+  } catch (error) {
+    console.error("Failed to migrate matches:", error);
+    return 0;
+  }
+};
+
+// Add a function to migrate seasons from IndexedDB to Supabase
+export const migrateSeasons = async (
+  saveSeasonFunction: (season: Season) => Promise<void>
+): Promise<number> => {
+  try {
+    const seasons = await getSeasons();
+    let successCount = 0;
+    
+    console.info(`Starting migration of ${seasons.length} seasons to Supabase`);
+    
+    for (const season of seasons) {
+      try {
+        await saveSeasonFunction(season);
+        successCount++;
+        console.info(`Successfully migrated season ${season.id} (${successCount}/${seasons.length})`);
+      } catch (error) {
+        console.error(`Failed to migrate season ${season.id}:`, error);
+      }
+    }
+    
+    console.info(`Migration completed: ${successCount}/${seasons.length} seasons migrated`);
+    return successCount;
+  } catch (error) {
+    console.error("Failed to migrate seasons:", error);
+    return 0;
   }
 };

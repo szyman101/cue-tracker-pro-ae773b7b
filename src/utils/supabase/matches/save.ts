@@ -31,39 +31,11 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     const playerBName = match.playerBName || 'Player B';
     console.log("Player names:", { playerAName, playerBName });
 
-    // We'll still try to create profiles but continue even if they fail
-    try {
-      console.log("Checking/creating profile for player A:", playerA, playerAName);
-      await createProfileIfNotExists(playerA, playerAName);
-    } catch (error) {
-      console.error("Error creating profile for player A:", error);
-      // Continue even if profile creation fails
-    }
-    
-    try {
-      console.log("Checking/creating profile for player B:", playerB, playerBName);
-      await createProfileIfNotExists(playerB, playerBName);
-    } catch (error) {
-      console.error("Error creating profile for player B:", error);
-      // Continue even if profile creation fails
-    }
-    
-    if (winner) {
-      try {
-        const winnerName = winner === playerA ? playerAName : playerBName;
-        console.log("Checking/creating profile for winner:", winner, winnerName);
-        await createProfileIfNotExists(winner, winnerName);
-      } catch (error) {
-        console.error("Error creating profile for winner:", error);
-        // Continue even if profile creation fails
-      }
-    }
-    
     console.log("Saving match to local IndexedDB as fallback");
     // First, try to save locally to ensure data isn't lost even if Supabase save fails
     await saveLocalMatch(match);
     
-    console.log("Saving match to Supabase after profile creation attempts");
+    console.log("Saving match to Supabase");
     
     // Prepare match data for saving
     const matchData = {
