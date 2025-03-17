@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Match, GameType } from "@/types";
 import { Json } from "@/integrations/supabase/types";
@@ -52,12 +51,10 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
 // Save a match to Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
-    // Add diagnostic logs
     console.log("Zapisuję mecz do Supabase:", match);
     
     const gamesJson = match.games as unknown as Json;
     
-    // Prepare proper UUIDs
     const matchId = ensureUuid(match.id);
     const playerA = ensureUuid(match.playerA);
     const playerB = ensureUuid(match.playerB);
@@ -72,12 +69,10 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       seasonId
     });
 
-    // Make sure we have player names
     const playerAName = match.playerAName || 'Gracz A';
     const playerBName = match.playerBName || 'Gracz B';
     console.log("Nazwy graczy:", { playerAName, playerBName });
 
-    // Make sure player profiles exist
     try {
       console.log("Sprawdzam/tworzę profil gracza A:", playerA, playerAName);
       await createProfileIfNotExists(playerA, playerAName);
@@ -104,7 +99,6 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     
     console.log("Zapisywanie meczu do Supabase po stworzeniu profili");
     
-    // Prepare data for saving
     const matchData = {
       id: matchId,
       date: match.date,
@@ -135,6 +129,39 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     }
   } catch (error) {
     console.error("Błąd podczas zapisywania meczu do Supabase:", error);
+    throw error;
+  }
+};
+
+// Delete a match from Supabase
+export const deleteMatchFromSupabase = async (matchId: string): Promise<void> => {
+  try {
+    console.log("Deleting match from Supabase:", matchId);
+    
+    const uuid = ensureUuid(matchId);
+    
+    const { error: relationError } = await supabase
+      .from('season_matches')
+      .delete()
+      .eq('match_id', uuid);
+      
+    if (relationError) {
+      console.error("Error deleting season-match relations:", relationError);
+    }
+    
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', uuid);
+      
+    if (error) {
+      console.error("Error deleting match:", error);
+      throw error;
+    }
+    
+    console.log("Match deleted successfully from Supabase");
+  } catch (error) {
+    console.error("Error deleting match from Supabase:", error);
     throw error;
   }
 };

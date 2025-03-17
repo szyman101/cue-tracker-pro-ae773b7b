@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -11,7 +12,7 @@ import BackButton from "@/components/BackButton";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
-  const { getUserMatches, getUserById, seasons, clearMatches } = useData();
+  const { getUserMatches, getUserById, seasons, clearMatches, deleteMatch } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   
@@ -26,6 +27,15 @@ const MatchHistory = () => {
       title: "Historia wyczyszczona",
       description: "Wszystkie mecze zostały usunięte",
     });
+  };
+
+  // Handler for deleting individual match
+  const handleDeleteMatch = async (matchId: string) => {
+    try {
+      await deleteMatch(matchId);
+    } catch (error) {
+      console.error("Error deleting match:", error);
+    }
   };
 
   return (
@@ -48,6 +58,7 @@ const MatchHistory = () => {
                 <TableHead>Wynik</TableHead>
                 <TableHead>Sezon</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead></TableHead> {/* Column for delete button */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,11 +71,6 @@ const MatchHistory = () => {
                   : (match.playerAName || "Nieznany przeciwnik");
                 
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
-                
-                console.log(`Match ${match.id}:`, match);
-                console.log(`Player A name: ${match.playerAName}, Player B name: ${match.playerBName}`);
-                console.log(`Is current user player A: ${isPlayerA}`);
-                console.log(`Opponent name being displayed: ${opponentName}`);
                 
                 // Calculate total scores from all games
                 let totalScoreA = 0;
@@ -83,8 +89,6 @@ const MatchHistory = () => {
                 const opponentWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
                 ).length;
-                
-                console.log(`User wins: ${userWins}, Opponent wins: ${opponentWins}`);
                 
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
@@ -125,12 +129,33 @@ const MatchHistory = () => {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Czy na pewno chcesz usunąć ten mecz?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Ta akcja jest nieodwracalna. Mecz zostanie trwale usunięty z historii.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteMatch(match.id)}>Usuń</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 );
               })}
               {sortedMatches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Brak historii meczów
                   </TableCell>
                 </TableRow>
