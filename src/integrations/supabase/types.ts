@@ -192,7 +192,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      enable_realtime:
+        | {
+            Args: Record<PropertyKey, never>
+            Returns: undefined
+          }
+        | {
+            Args: {
+              table_name: string
+            }
+            Returns: boolean
+          }
     }
     Enums: {
       [_ in never]: never
