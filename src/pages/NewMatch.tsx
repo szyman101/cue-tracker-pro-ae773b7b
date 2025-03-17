@@ -44,7 +44,7 @@ const NewMatch = () => {
       games: [],
       winner: '',
       timeElapsed: 0,
-      seasonId: selectedSeasonId || undefined,
+      seasonId: selectedSeasonId && selectedSeasonId !== 'none' ? selectedSeasonId : undefined,
       gamesToWin: parseInt(gamesToWin)
     };
 

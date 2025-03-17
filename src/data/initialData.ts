@@ -1,3 +1,4 @@
+
 import { User, Match, Season, GameType } from "../types";
 
 export const initialUsers: User[] = [
@@ -30,7 +31,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match1"],
-    winner: "user2" // Szyman
+    winner: "user2", // Szyman
+    matchesToWin: 3
   },
   {
     id: "preseason2",
@@ -41,7 +43,8 @@ export const initialSeasons: Season[] = [
     gamesPerMatch: 3,
     breakRule: "winner",
     active: false,
-    matches: ["match2"]
+    matches: ["match2"],
+    matchesToWin: 1
   },
   {
     id: "season2",
@@ -53,7 +56,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match3", "match4"],
-    winner: "user1" // Kimoz
+    winner: "user1", // Kimoz
+    matchesToWin: 3
   },
   {
     id: "season3",
@@ -65,7 +69,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match5"],
-    winner: "user1" // Kimoz
+    winner: "user1", // Kimoz
+    matchesToWin: 3
   },
   {
     id: "season4",
@@ -77,7 +82,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match6", "match7", "match8", "match9", "match10", "match11"],
-    winner: "user1" // Kimoz
+    winner: "user1", // Kimoz
+    matchesToWin: 3
   },
   {
     id: "season5",
@@ -89,7 +95,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match12"],
-    winner: "user2" // Szyman
+    winner: "user2", // Szyman
+    matchesToWin: 3
   },
   {
     id: "season6",
@@ -101,7 +108,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match13"],
-    winner: "user2" // Szyman
+    winner: "user2", // Szyman
+    matchesToWin: 3
   },
   {
     id: "season7",
@@ -113,7 +121,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match14"],
-    winner: "user2" // Szyman
+    winner: "user2", // Szyman
+    matchesToWin: 3
   },
   {
     id: "season8",
@@ -125,7 +134,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match15"],
-    winner: "user2" // Szyman
+    winner: "user2", // Szyman
+    matchesToWin: 3
   },
   {
     id: "season9",
@@ -136,7 +146,8 @@ export const initialSeasons: Season[] = [
     gamesPerMatch: 15,
     breakRule: "winner",
     active: false,
-    matches: ["match16"]
+    matches: ["match16"],
+    matchesToWin: 3
   },
   {
     id: "season10",
@@ -148,7 +159,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: false,
     matches: ["match17"],
-    winner: "user1" // Kimoz
+    winner: "user1", // Kimoz
+    matchesToWin: 4
   },
   {
     id: "season11",
@@ -161,7 +173,8 @@ export const initialSeasons: Season[] = [
     active: false,
     matches: ["match18"],
     winner: "user1", // Kimoz
-    stake: 150
+    stake: 150,
+    matchesToWin: 4
   },
   {
     id: "season12",
@@ -174,7 +187,8 @@ export const initialSeasons: Season[] = [
     active: false,
     matches: ["match19"],
     winner: "user1", // Kimoz
-    stake: 150
+    stake: 150,
+    matchesToWin: 3
   },
   {
     id: "season13",
@@ -186,7 +200,8 @@ export const initialSeasons: Season[] = [
     breakRule: "winner",
     active: true,
     matches: ["match20"],
-    stake: 150
+    stake: 150,
+    matchesToWin: 3
   }
 ];
 
