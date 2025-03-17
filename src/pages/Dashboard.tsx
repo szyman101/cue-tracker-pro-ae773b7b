@@ -55,7 +55,7 @@ const Dashboard = () => {
         currentUser={currentUser}
       />
 
-      {isAdmin && activeSeasons.length > 0 && (
+      {isAdmin && (
         <SeasonManagement activeSeasons={activeSeasons} />
       )}
 
@@ -73,6 +73,9 @@ const Dashboard = () => {
         </TabsContent>
         <TabsContent value="seasons" className="space-y-4">
           <SeasonHistory userSeasons={userSeasons} currentUser={currentUser} />
+          {activeSeasons.length > 0 && !isAdmin && (
+            <SeasonManagement activeSeasons={activeSeasons} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

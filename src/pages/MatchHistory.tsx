@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -7,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
@@ -33,23 +33,6 @@ const MatchHistory = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Historia meczów</h1>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive">Wyczyść historię</Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Anuluj</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
       
       <Card>
@@ -73,7 +56,6 @@ const MatchHistory = () => {
                 const isPlayerA = match.playerA === currentUser?.id;
                 const opponentId = isPlayerA ? match.playerB : match.playerA;
                 
-                // Use the saved player names from the match object
                 const opponentName = isPlayerA 
                   ? (match.playerBName || "Nieznany przeciwnik")
                   : (match.playerAName || "Nieznany przeciwnik");
@@ -85,7 +67,6 @@ const MatchHistory = () => {
                 console.log(`Is current user player A: ${isPlayerA}`);
                 console.log(`Opponent name being displayed: ${opponentName}`);
                 
-                // Count game wins (not score points) for proper display
                 const userWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
                 ).length;
@@ -143,6 +124,29 @@ const MatchHistory = () => {
               )}
             </TableBody>
           </Table>
+          
+          <div className="flex justify-end mt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Wyczyść historię
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>
