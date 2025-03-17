@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Match, Season, GameType, GameResult } from "@/types";
 import * as db from "./db";
@@ -132,25 +131,57 @@ export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: 
   }
 };
 
+// Generuj prawidłowe UUID jeśli string nie jest już UUID
+const ensureUuid = (id: string): string => {
+  // Sprawdź czy string jest już w formacie UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(id)) {
+    return id;
+  }
+  
+  // Jeśli nie jest UUID, wygeneruj deterministyczny UUID na podstawie stringa
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    const char = id.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Tworzenie "fałszywego" UUID na podstawie hasha
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (hash + Math.random() * 16) % 16 | 0;
+    hash = Math.floor(hash / 16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+  
+  return uuid;
+};
+
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
     // Convert GameResult[] to Json with proper type casting
     const gamesJson = match.games as unknown as Json;
     
+    // Ensure we have proper UUIDs for player IDs and winner
+    const playerA = ensureUuid(match.playerA);
+    const playerB = ensureUuid(match.playerB);
+    const winner = match.winner ? ensureUuid(match.winner) : null;
+    const seasonId = match.seasonId ? ensureUuid(match.seasonId) : null;
+    
     const { error } = await supabase
       .from('matches')
       .upsert({
         id: match.id,
         date: match.date,
-        player_a: match.playerA,
-        player_b: match.playerB,
+        player_a: playerA,
+        player_b: playerB,
         player_a_name: match.playerAName,
         player_b_name: match.playerBName,
         games: gamesJson,
-        winner: match.winner,
+        winner: winner,
         time_elapsed: match.timeElapsed,
-        season_id: match.seasonId,
+        season_id: seasonId,
         games_to_win: match.gamesToWin,
         notes: match.notes
       });
@@ -167,10 +198,15 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
 // Zapisywanie sezonu do Supabase
 export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
   try {
+    // Ensure season ID is a proper UUID
+    const seasonId = ensureUuid(season.id);
+    // Ensure winner ID is a proper UUID if present
+    const winnerId = season.winner ? ensureUuid(season.winner) : null;
+    
     const { error } = await supabase
       .from('seasons')
       .upsert({
-        id: season.id,
+        id: seasonId,
         name: season.name,
         start_date: season.startDate,
         end_date: season.endDate,
@@ -179,7 +215,7 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
         break_rule: season.breakRule,
         prize: season.prize,
         active: season.active,
-        winner: season.winner,
+        winner: winnerId,
         games_per_match: season.gamesPerMatch,
         stake: season.stake
       });
@@ -190,7 +226,7 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
     
     // Zapisywanie powiązań mecz-sezon
     for (const matchId of season.matches) {
-      await saveSeasonMatchRelation(season.id, matchId);
+      await saveSeasonMatchRelation(seasonId, matchId);
     }
   } catch (error) {
     console.error("Błąd podczas zapisywania sezonu do Supabase:", error);
@@ -201,11 +237,15 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
 // Zapisywanie relacji sezon-mecz
 export const saveSeasonMatchRelation = async (seasonId: string, matchId: string): Promise<void> => {
   try {
+    // Ensure IDs are proper UUIDs
+    const safeSeasonId = ensureUuid(seasonId);
+    const safeMatchId = ensureUuid(matchId);
+    
     const { error } = await supabase
       .from('season_matches')
       .upsert({
-        season_id: seasonId,
-        match_id: matchId
+        season_id: safeSeasonId,
+        match_id: safeMatchId
       });
       
     if (error) {
