@@ -6,17 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { CircleDot, Flag, Plus, Minus, Timer, Trophy } from 'lucide-react';
 import { GameResult, Match } from '@/types';
-import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
 const MatchView = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { getUserById, getActiveSeasons } = useData();
+  const { getUserById, getActiveSeasons, addMatch, updateSeasonWithMatch } = useData();
   const match = location.state?.match as Match;
   
   const [currentGame, setCurrentGame] = useState<GameResult>({
-    type: '8-ball',
+    type: match?.games?.[0]?.type || '8-ball',
     scoreA: 0,
     scoreB: 0,
     winner: '',
@@ -28,14 +27,14 @@ const MatchView = () => {
   const [breakRunsB, setBreakRunsB] = useState<number>(0);
   const [startTime] = useState<Date>(new Date());
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [games, setGames] = useState<GameResult[]>(match.games || []);
+  const [games, setGames] = useState<GameResult[]>(match?.games || []);
   const [winsA, setWinsA] = useState<number>(0);
   const [winsB, setWinsB] = useState<number>(0);
 
-  const playerA = getUserById(match.playerA);
-  const playerB = getUserById(match.playerB);
+  const playerA = getUserById(match?.playerA);
+  const playerB = getUserById(match?.playerB);
   const activeSeasons = getActiveSeasons();
-  const activeSeason = activeSeasons.length > 0 ? activeSeasons[0] : null;
+  const activeSeason = match?.seasonId ? activeSeasons.find(s => s.id === match.seasonId) : null;
 
   // Calculate wins for each player
   useEffect(() => {
@@ -76,13 +75,6 @@ const MatchView = () => {
       
       if (increment) {
         newScore += 1;
-        
-        // Handle break rule for next game
-        if (breakRule === 'alternate') {
-          setNextBreak(nextBreak === 'A' ? 'B' : 'A');
-        } else if (breakRule === 'winner') {
-          setNextBreak(player);
-        }
       } else {
         newScore = Math.max(0, newScore - 1);
       }
@@ -106,13 +98,6 @@ const MatchView = () => {
       setBreakRunsA(prev => prev + 1);
     } else {
       setBreakRunsB(prev => prev + 1);
-    }
-
-    // Update next break based on break rule
-    if (breakRule === 'winner') {
-      setNextBreak(player);
-    } else if (breakRule === 'alternate') {
-      setNextBreak(nextBreak === 'A' ? 'B' : 'A');
     }
   };
 
@@ -162,8 +147,14 @@ const MatchView = () => {
       timeElapsed: Math.floor((currentTime.getTime() - startTime.getTime()) / 1000)
     };
     
-    // Here you would save the match to your data store
-    // For now, we'll just show a toast and navigate back
+    // Save the match to the data store
+    addMatch(updatedMatch);
+    
+    // If this match is part of a season, update the season
+    if (match.seasonId) {
+      updateSeasonWithMatch(match.seasonId, match.id);
+    }
+    
     toast({
       title: "Mecz zakończony",
       description: matchWinner === 'tie' 
@@ -174,7 +165,7 @@ const MatchView = () => {
     navigate('/dashboard');
   };
 
-  const gamesToWin = match.gamesToWin || 3;
+  const gamesToWin = match?.gamesToWin || 3;
   const isMatchFinished = winsA >= gamesToWin || winsB >= gamesToWin;
 
   return (
@@ -195,7 +186,7 @@ const MatchView = () => {
             {/* Player A */}
             <div className="space-y-4">
               <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold text-center mb-1">{playerA?.nick} {nextBreak === 'A' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
+                <h2 className="text-3xl font-bold text-center mb-1">{playerA?.nick} {nextBreak === 'A' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
                 <div className="text-sm mb-3">
                   <Button 
                     variant="ghost" 
@@ -239,7 +230,7 @@ const MatchView = () => {
             {/* Player B */}
             <div className="space-y-4">
               <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold text-center mb-1">{playerB?.nick} {nextBreak === 'B' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
+                <h2 className="text-3xl font-bold text-center mb-1">{playerB?.nick} {nextBreak === 'B' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
                 <div className="text-sm mb-3">
                   <Button 
                     variant="ghost" 
@@ -299,14 +290,14 @@ const MatchView = () => {
               className="flex-1"
               onClick={() => finishCurrentGame('A')}
             >
-              Wygrywa {playerA?.nick}
+              {playerA?.nick} wygrywa partię
             </Button>
             <Button 
               variant="secondary"
               className="flex-1"
               onClick={() => finishCurrentGame('B')}
             >
-              Wygrywa {playerB?.nick}
+              {playerB?.nick} wygrywa partię
             </Button>
           </div>
           

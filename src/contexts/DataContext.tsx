@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, Match, Season } from "../types";
-import { initialUsers, initialMatches, initialSeasons } from "../data/initialData";
+import { User, Match, Season, GameType } from "../types";
+import { initialUsers } from "../data/initialData";
 
 interface DataContextType {
   users: User[];
@@ -12,6 +12,9 @@ interface DataContextType {
   getUserSeasons: (userId: string) => Season[];
   getSeasonMatches: (seasonId: string) => Match[];
   getActiveSeasons: () => Season[];
+  addMatch: (match: Match) => void;
+  addSeason: (season: Season) => void;
+  updateSeasonWithMatch: (seasonId: string, matchId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -24,10 +27,25 @@ export const useData = () => {
   return context;
 };
 
+// Load data from localStorage or use empty arrays as defaults
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  const storedData = localStorage.getItem(key);
+  return storedData ? JSON.parse(storedData) : defaultValue;
+};
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users] = useState<User[]>(initialUsers);
-  const [matches] = useState<Match[]>(initialMatches);
-  const [seasons] = useState<Season[]>(initialSeasons);
+  const [matches, setMatches] = useState<Match[]>(loadFromStorage('matches', []));
+  const [seasons, setSeasons] = useState<Season[]>(loadFromStorage('seasons', []));
+
+  // Save data to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('matches', JSON.stringify(matches));
+  }, [matches]);
+
+  useEffect(() => {
+    localStorage.setItem('seasons', JSON.stringify(seasons));
+  }, [seasons]);
 
   const getUserById = (id: string) => {
     return users.find(user => user.id === id);
@@ -51,6 +69,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return seasons.filter(season => season.active);
   };
 
+  const addMatch = (match: Match) => {
+    setMatches(prev => [...prev, match]);
+  };
+
+  const addSeason = (season: Season) => {
+    setSeasons(prev => [...prev, season]);
+  };
+
+  const updateSeasonWithMatch = (seasonId: string, matchId: string) => {
+    setSeasons(prev => 
+      prev.map(season => 
+        season.id === seasonId 
+          ? { ...season, matches: [...season.matches, matchId] }
+          : season
+      )
+    );
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -61,7 +97,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getUserMatches,
         getUserSeasons,
         getSeasonMatches,
-        getActiveSeasons
+        getActiveSeasons,
+        addMatch,
+        addSeason,
+        updateSeasonWithMatch
       }}
     >
       {children}

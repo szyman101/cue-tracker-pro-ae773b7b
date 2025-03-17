@@ -16,10 +16,14 @@ const NewMatch = () => {
   const [opponent, setOpponent] = useState<string>('');
   const [gameType, setGameType] = useState<GameType>('8-ball');
   const [gamesToWin, setGamesToWin] = useState<string>('3');
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
   
   const activeSeasons = getActiveSeasons();
-  const activeSeason = activeSeasons.length > 0 ? activeSeasons[0] : null;
   const availableOpponents = users.filter(user => user.id !== currentUser?.id);
+
+  // Filter game types based on selected season
+  const selectedSeason = activeSeasons.find(season => season.id === selectedSeasonId);
+  const availableGameTypes = selectedSeason?.gameTypes || ['8-ball', '9-ball', '10-ball'];
 
   const handleStartMatch = () => {
     if (!currentUser || !opponent) return;
@@ -32,7 +36,7 @@ const NewMatch = () => {
       games: [],
       winner: '',
       timeElapsed: 0,
-      seasonId: activeSeason?.id,
+      seasonId: selectedSeasonId || undefined,
       gamesToWin: parseInt(gamesToWin)
     };
 
@@ -63,15 +67,36 @@ const NewMatch = () => {
           </div>
           
           <div className="space-y-2">
+            <label className="text-sm font-medium">Sezon</label>
+            <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Wybierz sezon (opcjonalnie)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Mecz towarzyski</SelectItem>
+                {activeSeasons.map((season) => (
+                  <SelectItem key={season.id} value={season.id}>
+                    {season.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
             <label className="text-sm font-medium">Typ gry</label>
-            <Select value={gameType} onValueChange={(value) => setGameType(value as GameType)}>
+            <Select 
+              value={gameType} 
+              onValueChange={(value) => setGameType(value as GameType)}
+              disabled={selectedSeason && selectedSeason.gameTypes.length === 1}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="8-ball">8-ball</SelectItem>
-                <SelectItem value="9-ball">9-ball</SelectItem>
-                <SelectItem value="10-ball">10-ball</SelectItem>
+                {availableGameTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -83,13 +108,11 @@ const NewMatch = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1</SelectItem>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="3">3</SelectItem>
-                <SelectItem value="4">4</SelectItem>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="7">7</SelectItem>
-                <SelectItem value="9">9</SelectItem>
+                {[...Array(10)].map((_, index) => (
+                  <SelectItem key={index + 1} value={(index + 1).toString()}>
+                    {index + 1}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

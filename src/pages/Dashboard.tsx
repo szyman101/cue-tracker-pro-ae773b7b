@@ -5,7 +5,7 @@ import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Calendar, Users, History } from "lucide-react";
+import { Trophy, Calendar, Users, History, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -29,6 +29,9 @@ const Dashboard = () => {
         <div className="flex gap-4">
           <Button asChild>
             <Link to="/new-match">Nowy Mecz</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/new-season">Nowy Sezon</Link>
           </Button>
           {isAdmin && (
             <Button variant="outline" asChild>
@@ -128,18 +131,20 @@ const Dashboard = () => {
         </TabsContent>
         <TabsContent value="seasons" className="space-y-4">
           <div className="rounded-md border">
-            <div className="grid grid-cols-4 p-4 font-medium">
+            <div className="grid grid-cols-5 p-4 font-medium">
               <div>Nazwa sezonu</div>
               <div>Data rozpoczęcia</div>
               <div>Mecze</div>
+              <div>Nagroda</div>
               <div>Status</div>
             </div>
             <div className="divide-y">
               {userSeasons.map((season) => (
-                <div key={season.id} className="grid grid-cols-4 p-4 hover:bg-muted/50">
+                <div key={season.id} className="grid grid-cols-5 p-4 hover:bg-muted/50">
                   <div>{season.name}</div>
                   <div>{new Date(season.startDate).toLocaleDateString()}</div>
                   <div>{season.matches.length}</div>
+                  <div>{season.prize || "-"}</div>
                   <div>
                     {season.active ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">

@@ -39,9 +39,9 @@ export interface Season {
   startDate: string;
   endDate?: string;
   gameTypes: GameType[];
-  gamesPerMatch: number;
+  matchesToWin: number; // number of matches needed to win the season
   breakRule: "winner" | "alternate";
-  stake?: number;
+  prize?: string; // prize for winning the season
   active: boolean;
   matches: string[]; // match ids
   winner?: string; // user id
