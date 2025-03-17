@@ -10,6 +10,7 @@ import SeasonHistory from "@/components/dashboard/SeasonHistory";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
 import BackButton from "@/components/BackButton";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -39,9 +40,12 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto py-6 space-y-6 relative">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">
-          Witaj, {currentUser?.nick} {isAdmin && "(Administrator)"}
-        </h1>
+        <div className="flex items-center gap-4">
+          <Logo size="small" />
+          <h1 className="text-3xl font-bold">
+            Witaj, {currentUser?.nick} {isAdmin && "(Administrator)"}
+          </h1>
+        </div>
         <div className="flex gap-4">
           {isAdmin ? (
             <AdminControls clearMatchesAndSeasons={clearMatchesAndSeasons} />

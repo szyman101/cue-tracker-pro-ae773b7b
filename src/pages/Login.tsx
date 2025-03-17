@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { User, KeyRound, Link as LinkIcon, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import Logo from "@/components/Logo";
 
 const Login = () => {
   const [login, setLogin] = useState("");
@@ -18,13 +18,11 @@ const Login = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check for auto-login parameters in URL
     const params = new URLSearchParams(location.search);
     const autoLogin = params.get("login");
     
     if (autoLogin) {
       setLogin(autoLogin);
-      // Focus on password field if a login is provided
       document.getElementById("password")?.focus();
     }
   }, [location]);
@@ -37,7 +35,6 @@ const Login = () => {
   };
 
   const generateShareableLink = (userLogin: string) => {
-    // Create a URL with the login parameter
     const baseUrl = window.location.origin;
     return `${baseUrl}/login?login=${encodeURIComponent(userLogin)}`;
   };
@@ -55,6 +52,9 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-2">
+            <Logo size="large" showText={false} />
+          </div>
           <CardTitle className="text-2xl font-bold text-center">Bilard Score Tracker</CardTitle>
           <CardDescription className="text-center">
             Wprowadź dane logowania, aby kontynuować
