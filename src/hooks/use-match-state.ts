@@ -70,7 +70,7 @@ export const useMatchState = ({ match }: UseMatchStateProps) => {
           setNextBreak(player);
         } else if (breakRule === 'alternate') {
           // Toggle the breaking player after each score change
-          setNextBreak(currentBreak => (currentBreak === 'A' ? 'B' : 'A'));
+          setNextBreak(nextBreak === 'A' ? 'B' : 'A');
         }
       } else {
         newScore = Math.max(0, newScore - 1);

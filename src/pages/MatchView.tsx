@@ -61,7 +61,7 @@ const MatchView = () => {
       games: games, // Use the games array from useMatchState
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
-      seasonId: match.seasonId,
+      seasonId: typeof match.seasonId === 'string' ? match.seasonId : undefined,
       gamesToWin: match.gamesToWin
     };
     
@@ -71,7 +71,7 @@ const MatchView = () => {
     addMatch(completedMatch);
     
     // If this match is part of a season, update the season
-    if (match.seasonId) {
+    if (typeof match.seasonId === 'string' && match.seasonId) {
       updateSeasonWithMatch(match.seasonId, match.id);
     }
     
