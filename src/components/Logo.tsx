@@ -21,7 +21,7 @@ const Logo = ({ className, size = "medium", showText = true, rounded = false }: 
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <img 
-        src="/lovable-uploads/ca7ed6ce-0489-4b0d-9492-511daf16c1e1.png" 
+        src="/lovable-uploads/0e728591-73b1-4b77-922d-298326332f43.png" 
         alt="Cue Tracker Logo" 
         className={cn(
           sizes[size], 

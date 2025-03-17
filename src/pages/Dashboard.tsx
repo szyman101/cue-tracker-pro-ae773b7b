@@ -42,7 +42,7 @@ const Dashboard = () => {
       {/* Logo background with 2% visibility */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] z-0">
         <img 
-          src="/lovable-uploads/ca7ed6ce-0489-4b0d-9492-511daf16c1e1.png" 
+          src="/lovable-uploads/0e728591-73b1-4b77-922d-298326332f43.png" 
           alt="Background Logo" 
           className="w-full h-full object-contain"
         />
