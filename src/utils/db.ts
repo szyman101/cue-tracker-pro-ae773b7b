@@ -61,10 +61,14 @@ export const addMatch = async (match: Match): Promise<void> => {
   await withDB<IDBValidKey>(MATCHES_STORE, "readwrite", (store) => store.put(match));
 };
 
-// Pobierz wszystkie mecze
+// Pobierz wszystkie mecze - poprawiona wersja
 export const getMatches = async (): Promise<Match[]> => {
-  return withDB<Match[]>(MATCHES_STORE, "readonly", (store) => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(MATCHES_STORE, "readonly");
+    const store = transaction.objectStore(MATCHES_STORE);
     const matches: Match[] = [];
+    
     const request = store.openCursor();
     
     request.onsuccess = (event) => {
@@ -72,10 +76,19 @@ export const getMatches = async (): Promise<Match[]> => {
       if (cursor) {
         matches.push(cursor.value);
         cursor.continue();
+      } else {
+        // Gdy wszystkie wyniki zostały przetworzone (cursor jest null)
+        resolve(matches);
       }
     };
     
-    return request;
+    request.onerror = () => {
+      reject(request.error);
+    };
+    
+    transaction.oncomplete = () => {
+      db.close();
+    };
   });
 };
 
@@ -89,10 +102,14 @@ export const addSeason = async (season: Season): Promise<void> => {
   await withDB<IDBValidKey>(SEASONS_STORE, "readwrite", (store) => store.put(season));
 };
 
-// Pobierz wszystkie sezony
+// Pobierz wszystkie sezony - poprawiona wersja
 export const getSeasons = async (): Promise<Season[]> => {
-  return withDB<Season[]>(SEASONS_STORE, "readonly", (store) => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(SEASONS_STORE, "readonly");
+    const store = transaction.objectStore(SEASONS_STORE);
     const seasons: Season[] = [];
+    
     const request = store.openCursor();
     
     request.onsuccess = (event) => {
@@ -100,10 +117,19 @@ export const getSeasons = async (): Promise<Season[]> => {
       if (cursor) {
         seasons.push(cursor.value);
         cursor.continue();
+      } else {
+        // Gdy wszystkie wyniki zostały przetworzone (cursor jest null)
+        resolve(seasons);
       }
     };
     
-    return request;
+    request.onerror = () => {
+      reject(request.error);
+    };
+    
+    transaction.oncomplete = () => {
+      db.close();
+    };
   });
 };
 

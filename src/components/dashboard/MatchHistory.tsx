@@ -16,8 +16,8 @@ interface MatchHistoryProps {
 }
 
 const MatchHistory: React.FC<MatchHistoryProps> = ({ 
-  userMatches, 
-  userSeasons, 
+  userMatches = [], 
+  userSeasons = [], 
   currentUser,
   hideControls = false
 }) => {
@@ -31,6 +31,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
     });
   };
 
+  // Zabezpieczenie przed null/undefined
+  const matches = Array.isArray(userMatches) ? userMatches : [];
+  const seasons = Array.isArray(userSeasons) ? userSeasons : [];
+
   return (
     <div className="space-y-4 relative">
       <div className="rounded-md border">
@@ -42,10 +46,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
           <div>Sezon</div>
         </div>
         <div className="divide-y">
-          {userMatches.slice(0, 10).map((match) => {
+          {matches.slice(0, 10).map((match) => {
             const playerA = match.playerAName || (match.playerA === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
-            const season = userSeasons.find(s => s.id === match.seasonId);
+            const season = seasons.find(s => s.id === match.seasonId);
             
             // Extract the scores from each game
             let totalScoreA = 0;
@@ -69,19 +73,19 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
               </div>
             );
           })}
-          {userMatches.length === 0 && (
+          {matches.length === 0 && (
             <div className="p-4 text-center text-muted-foreground">Brak historii meczów</div>
           )}
         </div>
       </div>
       {!hideControls && (
         <div className="flex justify-between items-center">
-          {userMatches.length > 10 && (
+          {matches.length > 10 && (
             <Button variant="outline" asChild>
               <Link to="/history">Zobacz więcej</Link>
             </Button>
           )}
-          <div className={userMatches.length <= 10 ? "ml-auto" : ""}>
+          <div className={matches.length <= 10 ? "ml-auto" : ""}>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">

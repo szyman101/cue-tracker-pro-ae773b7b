@@ -49,10 +49,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const loadedMatches = await db.getMatches();
         const loadedSeasons = await db.getSeasons();
         
-        setMatches(loadedMatches as Match[]);
-        setSeasons(loadedSeasons as Season[]);
+        setMatches(Array.isArray(loadedMatches) ? loadedMatches : []);
+        setSeasons(Array.isArray(loadedSeasons) ? loadedSeasons : []);
       } catch (error) {
         console.error("Błąd podczas ładowania danych:", error);
+        // W przypadku błędów, inicjalizujemy puste tablice
+        setMatches([]);
+        setSeasons([]);
       } finally {
         setIsLoading(false);
       }
@@ -67,8 +70,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const saveMatches = async () => {
       try {
-        for (const match of matches) {
-          await db.addMatch(match);
+        if (Array.isArray(matches)) {
+          for (const match of matches) {
+            await db.addMatch(match);
+          }
         }
       } catch (error) {
         console.error("Błąd podczas zapisywania meczów:", error);
@@ -84,8 +89,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const saveSeasons = async () => {
       try {
-        for (const season of seasons) {
-          await db.addSeason(season);
+        if (Array.isArray(seasons)) {
+          for (const season of seasons) {
+            await db.addSeason(season);
+          }
         }
       } catch (error) {
         console.error("Błąd podczas zapisywania sezonów:", error);
@@ -100,25 +107,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getUserMatches = (userId: string) => {
-    return matches.filter(match => match.playerA === userId || match.playerB === userId);
+    return matches ? matches.filter(match => match.playerA === userId || match.playerB === userId) : [];
   };
 
   const getUserSeasons = (userId: string) => {
+    if (!matches || !seasons) return [];
     const userMatches = getUserMatches(userId);
     const seasonIds = Array.from(new Set(userMatches.map(match => match.seasonId).filter(Boolean)));
     return seasons.filter(season => seasonIds.includes(season.id));
   };
 
   const getSeasonMatches = (seasonId: string) => {
-    return matches.filter(match => match.seasonId === seasonId);
+    return matches ? matches.filter(match => match.seasonId === seasonId) : [];
   };
 
   const getActiveSeasons = () => {
-    return seasons.filter(season => season.active);
+    return seasons ? seasons.filter(season => season.active) : [];
   };
 
   const addMatch = (match: Match) => {
     setMatches(prev => {
+      if (!prev) return [match];
+      
       const matchIndex = prev.findIndex(m => m.id === match.id);
       if (matchIndex >= 0) {
         // Zastąp istniejący mecz
@@ -133,12 +143,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addSeason = (season: Season) => {
-    setSeasons(prev => [...prev, season]);
+    setSeasons(prev => prev ? [...prev, season] : [season]);
   };
 
   const updateSeasonWithMatch = (seasonId: string, matchId: string) => {
-    setSeasons(prev => 
-      prev.map(season => {
+    setSeasons(prev => {
+      if (!prev) return prev;
+      
+      return prev.map(season => {
         if (season.id === seasonId) {
           // Dodaj ID meczu tylko jeśli nie istnieje już w tablicy meczów
           if (!season.matches.includes(matchId)) {
@@ -146,8 +158,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         return season;
-      })
-    );
+      });
+    });
   };
 
   // Wyczyść wszystkie mecze
@@ -165,13 +177,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Usuń konkretny sezon po ID
   const deleteSeason = async (seasonId: string) => {
     await db.deleteSeason(seasonId);
-    setSeasons(prev => prev.filter(season => season.id !== seasonId));
+    setSeasons(prev => prev ? prev.filter(season => season.id !== seasonId) : []);
   };
   
   // Zakończ sezon (oznacz jako nieaktywny)
   const endSeason = (seasonId: string, winnerId?: string) => {
-    setSeasons(prev => 
-      prev.map(season => {
+    setSeasons(prev => {
+      if (!prev) return prev;
+      
+      return prev.map(season => {
         if (season.id === seasonId) {
           const updatedSeason = { 
             ...season, 
@@ -186,8 +200,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return updatedSeason;
         }
         return season;
-      })
-    );
+      });
+    });
   };
 
   if (isLoading) {
