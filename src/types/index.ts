@@ -45,4 +45,5 @@ export interface Season {
   active: boolean;
   matches: string[]; // match ids
   winner?: string; // user id
+  matchesPerGame?: number; // Adding this property to fix the error
 }
