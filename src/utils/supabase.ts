@@ -183,20 +183,28 @@ const createProfileIfNotExists = async (userId: string, nickname: string): Promi
     if (!profileExists) {
       console.log(`Tworzenie profilu dla użytkownika ${userId} (${nickname})`);
       
-      const { error } = await supabase
+      // Dodaj więcej logów diagnostycznych
+      console.log("Dane profilu do utworzenia:", {
+        id: userId,
+        nick: nickname || 'Gracz',
+        role: 'player'
+      });
+      
+      const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: userId,
           nick: nickname || 'Gracz',
           role: 'player'
-        });
+        })
+        .select();
         
       if (error) {
         console.error("Error creating profile:", error);
         return false;
       }
       
-      console.log(`Profil utworzony pomyślnie dla ${userId}`);
+      console.log(`Profil utworzony pomyślnie dla ${userId}:`, data);
       return true;
     }
     
@@ -210,6 +218,9 @@ const createProfileIfNotExists = async (userId: string, nickname: string): Promi
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
+    // Dodaj więcej logów diagnostycznych
+    console.log("Zapisuję mecz do Supabase:", match);
+    
     const gamesJson = match.games as unknown as Json;
     
     // Przygotuj prawidłowe UUID
@@ -227,38 +238,66 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       seasonId
     });
 
+    // Upewnij się, że mamy nazwy graczy
+    const playerAName = match.playerAName || 'Gracz A';
+    const playerBName = match.playerBName || 'Gracz B';
+    console.log("Nazwy graczy:", { playerAName, playerBName });
+
     // Upewnij się, że profile graczy istnieją
-    await createProfileIfNotExists(playerA, match.playerAName || 'Gracz A');
-    await createProfileIfNotExists(playerB, match.playerBName || 'Gracz B');
+    try {
+      console.log("Sprawdzam/tworzę profil gracza A:", playerA, playerAName);
+      await createProfileIfNotExists(playerA, playerAName);
+    } catch (error) {
+      console.error("Błąd podczas tworzenia profilu gracza A:", error);
+    }
+    
+    try {
+      console.log("Sprawdzam/tworzę profil gracza B:", playerB, playerBName);
+      await createProfileIfNotExists(playerB, playerBName);
+    } catch (error) {
+      console.error("Błąd podczas tworzenia profilu gracza B:", error);
+    }
+    
     if (winner) {
-      const winnerName = winner === playerA ? match.playerAName : match.playerBName;
-      await createProfileIfNotExists(winner, winnerName || 'Zwycięzca');
+      try {
+        const winnerName = winner === playerA ? playerAName : playerBName;
+        console.log("Sprawdzam/tworzę profil zwycięzcy:", winner, winnerName);
+        await createProfileIfNotExists(winner, winnerName);
+      } catch (error) {
+        console.error("Błąd podczas tworzenia profilu zwycięzcy:", error);
+      }
     }
     
     console.log("Zapisywanie meczu do Supabase po stworzeniu profili");
     
-    const { error } = await supabase
+    // Przygotuj dane do zapisu
+    const matchData = {
+      id: matchId,
+      date: match.date,
+      player_a: playerA,
+      player_b: playerB,
+      player_a_name: playerAName,
+      player_b_name: playerBName,
+      games: gamesJson,
+      winner: winner,
+      time_elapsed: match.timeElapsed,
+      season_id: seasonId,
+      games_to_win: match.gamesToWin,
+      notes: match.notes
+    };
+    
+    console.log("Dane meczu do zapisania:", matchData);
+    
+    const { data, error } = await supabase
       .from('matches')
-      .upsert({
-        id: matchId,
-        date: match.date,
-        player_a: playerA,
-        player_b: playerB,
-        player_a_name: match.playerAName,
-        player_b_name: match.playerBName,
-        games: gamesJson,
-        winner: winner,
-        time_elapsed: match.timeElapsed,
-        season_id: seasonId,
-        games_to_win: match.gamesToWin,
-        notes: match.notes
-      });
+      .upsert(matchData)
+      .select();
       
     if (error) {
       console.error("Szczegółowy błąd zapisu meczu:", error);
       throw error;
     } else {
-      console.log("Mecz zapisany pomyślnie w Supabase:", matchId);
+      console.log("Mecz zapisany pomyślnie w Supabase:", data);
     }
   } catch (error) {
     console.error("Błąd podczas zapisywania meczu do Supabase:", error);
