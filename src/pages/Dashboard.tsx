@@ -2,6 +2,7 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatsCards from "@/components/dashboard/StatsCards";
 import SeasonManagement from "@/components/dashboard/SeasonManagement";
@@ -10,7 +11,7 @@ import SeasonHistory from "@/components/dashboard/SeasonHistory";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, ArrowLeft } from "lucide-react";
 
 const Dashboard = () => {
   const { currentUser, isAdmin, logout } = useAuth();
@@ -21,6 +22,7 @@ const Dashboard = () => {
     clearSeasons, 
     clearMatches
   } = useData();
+  const navigate = useNavigate();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   const userSeasons = currentUser ? getUserSeasons(currentUser.id) : [];
@@ -35,8 +37,12 @@ const Dashboard = () => {
     clearSeasons();
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 relative">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">
           Witaj, {currentUser?.nick} {isAdmin && "(Administrator)"}
@@ -86,6 +92,17 @@ const Dashboard = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Back button positioned in the bottom left */}
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={handleGoBack}
+        className="fixed bottom-6 left-6 rounded-full shadow-md"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        <span className="sr-only">Wróć</span>
+      </Button>
     </div>
   );
 };
