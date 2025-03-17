@@ -12,9 +12,15 @@ interface MatchHistoryProps {
   userMatches: Match[];
   userSeasons: Season[];
   currentUser: User | null;
+  hideControls?: boolean;
 }
 
-const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, currentUser }) => {
+const MatchHistory: React.FC<MatchHistoryProps> = ({ 
+  userMatches, 
+  userSeasons, 
+  currentUser,
+  hideControls = false
+}) => {
   const { clearMatches } = useData();
 
   const handleClearHistory = () => {
@@ -68,35 +74,37 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
           )}
         </div>
       </div>
-      <div className="flex justify-between items-center">
-        {userMatches.length > 10 && (
-          <Button variant="outline" asChild>
-            <Link to="/history">Zobacz więcej</Link>
-          </Button>
-        )}
-        <div className={userMatches.length <= 10 ? "ml-auto" : ""}>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Wyczyść historię meczów
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      {!hideControls && (
+        <div className="flex justify-between items-center">
+          {userMatches.length > 10 && (
+            <Button variant="outline" asChild>
+              <Link to="/history">Zobacz więcej</Link>
+            </Button>
+          )}
+          <div className={userMatches.length <= 10 ? "ml-auto" : ""}>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Wyczyść historię meczów
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
