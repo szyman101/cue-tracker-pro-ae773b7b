@@ -92,11 +92,8 @@ const Scoreboard: React.FC<ScoreboardProps> = ({
         <MatchControls
           breakRule={breakRule}
           nextBreakPlayerName={nextBreak === 'A' ? playerAName : playerBName}
-          playerAName={playerAName}
-          playerBName={playerBName}
           isMatchFinished={isMatchFinished}
           onToggleBreakRule={onToggleBreakRule}
-          onFinishGame={onFinishGame}
           onEndMatch={onEndMatch}
         />
       </CardFooter>

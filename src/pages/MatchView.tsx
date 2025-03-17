@@ -68,6 +68,17 @@ const MatchView = () => {
     navigate('/dashboard');
   };
 
+  // Function to determine the winner based on the last game's scores
+  const determineWinner = () => {
+    if (currentGame.scoreA > currentGame.scoreB) {
+      return 'A';
+    } else if (currentGame.scoreB > currentGame.scoreA) {
+      return 'B';
+    }
+    // Default to A if equal (can be changed as needed)
+    return 'A';
+  };
+
   const handleFinishGame = (winner: 'A' | 'B') => {
     finishCurrentGame(winner);
     
