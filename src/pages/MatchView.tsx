@@ -46,8 +46,20 @@ const MatchView = () => {
       finishCurrentGame(winner);
     }
     
+    // Need to get the latest games array after potentially finishing the current game
+    const finalGames = [...games];
+    if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
+      const winner = currentGame.scoreA > currentGame.scoreB ? 'A' : 'B';
+      finalGames.push({
+        ...currentGame,
+        winner
+      });
+    }
+    
     // Calculate winner based on wins
-    const matchWinner = winsA > winsB ? playerA?.id : winsB > winsA ? playerB?.id : 'tie';
+    const finalWinsA = finalGames.filter(g => g.winner === 'A').length;
+    const finalWinsB = finalGames.filter(g => g.winner === 'B').length;
+    const matchWinner = finalWinsA > finalWinsB ? playerA?.id : finalWinsB > finalWinsA ? playerB?.id : 'tie';
     
     // Calculate elapsed time in seconds
     const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
@@ -58,7 +70,7 @@ const MatchView = () => {
       date: match.date,
       playerA: match.playerA,
       playerB: match.playerB,
-      games: games, // Use the games array from useMatchState
+      games: finalGames, // Use the finalGames array which includes all finished games
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
       seasonId: typeof match.seasonId === 'string' ? match.seasonId : undefined,

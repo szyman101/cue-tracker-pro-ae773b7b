@@ -115,14 +115,17 @@ export const useMatchState = ({ match }: UseMatchStateProps) => {
   };
 
   const finishCurrentGame = (winner: 'A' | 'B') => {
-    // Save current game
-    const finishedGame = {
-      ...currentGame,
-      winner
-    };
-    
-    const updatedGames = [...games, finishedGame];
-    setGames(updatedGames);
+    // Only add the game if it has scores
+    if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
+      // Save current game
+      const finishedGame = {
+        ...currentGame,
+        winner
+      };
+      
+      const updatedGames = [...games, finishedGame];
+      setGames(updatedGames);
+    }
     
     // Reset for next game
     setCurrentGame({
