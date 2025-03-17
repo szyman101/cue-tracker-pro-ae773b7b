@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -12,15 +13,16 @@ import SeasonHistory from "@/components/dashboard/SeasonHistory";
 import SeasonManagement from "@/components/dashboard/SeasonManagement";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
-import { calculateWinRate, calculateAverageScore, calculateBreaks } from "@/utils/stats";
+import { calculateWinRate, calculateAverageScore, calculateBreaks, calculateMatchesWon } from "@/utils/stats";
 import MigrationButton from "@/components/dashboard/MigrationButton";
 
 const Dashboard = () => {
   const { currentUser, secondUser, isAdmin, isTwoPlayerMode, logout } = useAuth();
-  const { getUserMatches, getUserSeasons, matches, seasons } = useData();
+  const { getUserMatches, getUserSeasons, getActiveSeasons } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   const userSeasons = currentUser ? getUserSeasons(currentUser.id) : [];
+  const activeSeasons = getActiveSeasons();
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -35,10 +37,13 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
           <StatsCards
-            totalMatches={userMatches.length}
+            totalMatchesPlayed={userMatches.length}
+            matchesWon={calculateMatchesWon(userMatches, currentUser?.id)}
             winRate={calculateWinRate(userMatches, currentUser?.id)}
-            averageScore={calculateAverageScore(userMatches, currentUser?.id)}
-            breaks={calculateBreaks(userMatches, currentUser?.id)}
+            activeSeasons={activeSeasons}
+            userSeasons={userSeasons}
+            currentUser={currentUser}
+            title="Statystyki"
           />
 
           <Card>
@@ -105,7 +110,7 @@ const Dashboard = () => {
               />
               {isAdmin && (
                 <div className="mt-4">
-                  <SeasonManagement />
+                  <SeasonManagement activeSeasons={activeSeasons} />
                 </div>
               )}
             </CardContent>
@@ -117,7 +122,7 @@ const Dashboard = () => {
                 <CardTitle>Panel administratora</CardTitle>
               </CardHeader>
               <CardContent>
-                <AdminControls />
+                <AdminControls clearMatchesAndSeasons={() => {}} />
               </CardContent>
             </Card>
           )}
