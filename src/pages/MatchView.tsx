@@ -58,8 +58,9 @@ const MatchView = () => {
         // Update next break based on break rule
         if (breakRule === 'winner') {
           setNextBreak(player);
-        } else {
-          setNextBreak(player === 'A' ? 'B' : 'A');
+        } else if (breakRule === 'alternate') {
+          // Fixed: For alternate, always switch to the other player regardless of who scored
+          setNextBreak(nextBreak === 'A' ? 'B' : 'A');
         }
       } else {
         newScore = Math.max(0, newScore - 1);
@@ -89,8 +90,9 @@ const MatchView = () => {
     // Update next break based on break rule
     if (breakRule === 'winner') {
       setNextBreak(player);
-    } else {
-      setNextBreak(player === 'A' ? 'B' : 'A');
+    } else if (breakRule === 'alternate') {
+      // Fixed: For alternate, switch to the other player
+      setNextBreak(nextBreak === 'A' ? 'B' : 'A');
     }
   };
 
@@ -115,9 +117,9 @@ const MatchView = () => {
           <div className="grid grid-cols-2 gap-6">
             {/* Player A */}
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">{playerA?.nick} {nextBreak === 'A' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
-                <div className="text-sm">
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-bold text-center mb-1">{playerA?.nick} {nextBreak === 'A' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
+                <div className="text-sm mb-3">
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -154,9 +156,9 @@ const MatchView = () => {
             
             {/* Player B */}
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">{playerB?.nick} {nextBreak === 'B' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
-                <div className="text-sm">
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-bold text-center mb-1">{playerB?.nick} {nextBreak === 'B' && <Flag className="inline-block w-4 h-4 ml-1" />}</h2>
+                <div className="text-sm mb-3">
                   <Button 
                     variant="ghost" 
                     size="sm" 
