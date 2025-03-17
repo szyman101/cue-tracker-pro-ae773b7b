@@ -53,7 +53,7 @@ const Login = () => {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-2">
-            <Logo size="large" showText={false} />
+            <Logo size="xl" showText={false} rounded={true} />
           </div>
           <CardTitle className="text-2xl font-bold text-center">Bilard Score Tracker</CardTitle>
           <CardDescription className="text-center">
