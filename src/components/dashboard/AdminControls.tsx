@@ -20,7 +20,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({ clearMatchesAndSeasons })
   };
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 flex-wrap">
       <Button asChild>
         <Link to="/new-match">Nowy Mecz</Link>
       </Button>
@@ -34,7 +34,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({ clearMatchesAndSeasons })
         <AlertDialogTrigger asChild>
           <Button variant="destructive">
             <Trash2 className="w-4 h-4 mr-2" />
-            Wyczyść dane
+            Wyczyść wszystkie dane
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

@@ -57,7 +57,7 @@ const SeasonManagement: React.FC<SeasonManagementProps> = ({ activeSeasons }) =>
   }
 
   return (
-    <Card>
+    <Card className="mb-6">
       <CardHeader>
         <CardTitle>Zarządzanie Sezonami</CardTitle>
         <CardDescription>Zakończ lub usuń aktywne sezony</CardDescription>
