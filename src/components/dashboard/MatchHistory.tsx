@@ -7,22 +7,19 @@ import { Match, Season, User } from "@/types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { useData } from "@/contexts/DataContext";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface MatchHistoryProps {
   userMatches: Match[];
   userSeasons: Season[];
   currentUser: User | null;
   hideControls?: boolean;
-  isLoading?: boolean;
 }
 
 const MatchHistory: React.FC<MatchHistoryProps> = ({ 
   userMatches, 
   userSeasons, 
   currentUser,
-  hideControls = false,
-  isLoading = false
+  hideControls = false
 }) => {
   const { clearMatches } = useData();
 
@@ -45,18 +42,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
           <div>Sezon</div>
         </div>
         <div className="divide-y">
-          {isLoading ? (
-            // Loading skeletons
-            Array(3).fill(0).map((_, index) => (
-              <div key={index} className="grid grid-cols-5 p-4">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-28" />
-              </div>
-            ))
-          ) : userMatches.slice(0, 10).map((match) => {
+          {userMatches.slice(0, 10).map((match) => {
             const playerA = match.playerAName || (match.playerA === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const season = userSeasons.find(s => s.id === match.seasonId);
@@ -83,7 +69,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
               </div>
             );
           })}
-          {!isLoading && userMatches.length === 0 && (
+          {userMatches.length === 0 && (
             <div className="p-4 text-center text-muted-foreground">Brak historii meczów</div>
           )}
         </div>

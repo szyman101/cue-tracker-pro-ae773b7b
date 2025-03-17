@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -8,14 +9,14 @@ import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import BackButton from "@/components/BackButton";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
-  const { getUserMatches, getUserById, seasons, clearMatches, isLoading } = useData();
+  const { getUserMatches, getUserById, seasons, clearMatches } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   
+  // Sort matches by date (newest first)
   const sortedMatches = [...userMatches].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -53,18 +54,7 @@ const MatchHistory = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                Array(5).fill(0).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                  </TableRow>
-                ))
-              ) : sortedMatches.map((match) => {
+              {sortedMatches.map((match) => {
                 const isPlayerA = match.playerA === currentUser?.id;
                 const opponentId = isPlayerA ? match.playerB : match.playerA;
                 
@@ -79,6 +69,7 @@ const MatchHistory = () => {
                 console.log(`Is current user player A: ${isPlayerA}`);
                 console.log(`Opponent name being displayed: ${opponentName}`);
                 
+                // Calculate total scores from all games
                 let totalScoreA = 0;
                 let totalScoreB = 0;
                 
@@ -87,6 +78,7 @@ const MatchHistory = () => {
                   totalScoreB += game.scoreB;
                 });
                 
+                // Also keep track of games won for showing win/loss
                 const userWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
                 ).length;
@@ -101,6 +93,7 @@ const MatchHistory = () => {
                 
                 const isWinner = match.winner === currentUser?.id;
                 
+                // Display user's score first, followed by opponent's score
                 const userScore = isPlayerA ? totalScoreA : totalScoreB;
                 const opponentScore = isPlayerA ? totalScoreB : totalScoreA;
 
@@ -138,7 +131,7 @@ const MatchHistory = () => {
                   </TableRow>
                 );
               })}
-              {!isLoading && sortedMatches.length === 0 && (
+              {sortedMatches.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
                     Brak historii meczów

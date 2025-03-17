@@ -1,9 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, Match, Season } from "../types";
+import { User, Match, Season, GameType } from "../types";
 import { initialUsers } from "../data/initialData";
-import { getMatches, getSeasons, saveMatch, saveSeason, deleteMatch, deleteSeason, clearMatches, clearSeasons } from "../services/db";
-import { toast } from "@/hooks/use-toast";
 
 interface DataContextType {
   users: User[];
@@ -21,7 +19,6 @@ interface DataContextType {
   clearSeasons: () => void;
   deleteSeason: (seasonId: string) => void;
   endSeason: (seasonId: string, winnerId?: string) => void;
-  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -34,36 +31,25 @@ export const useData = () => {
   return context;
 };
 
+// Load data from localStorage or use empty arrays as defaults
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  const storedData = localStorage.getItem(key);
+  return storedData ? JSON.parse(storedData) : defaultValue;
+};
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users] = useState<User[]>(initialUsers);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [matches, setMatches] = useState<Match[]>(loadFromStorage('matches', []));
+  const [seasons, setSeasons] = useState<Season[]>(loadFromStorage('seasons', []));
 
-  // Load data from IndexedDB on initial render
+  // Save data to localStorage when it changes
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const loadedMatches = await getMatches();
-        const loadedSeasons = await getSeasons();
-        
-        setMatches(loadedMatches);
-        setSeasons(loadedSeasons);
-      } catch (error) {
-        console.error("Error loading data from IndexedDB:", error);
-        toast({
-          title: "Błąd ładowania danych",
-          description: "Wystąpił problem podczas ładowania danych. Niektóre dane mogą być niedostępne.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    localStorage.setItem('matches', JSON.stringify(matches));
+  }, [matches]);
 
-    loadData();
-  }, []);
+  useEffect(() => {
+    localStorage.setItem('seasons', JSON.stringify(seasons));
+  }, [seasons]);
 
   const getUserById = (id: string) => {
     return users.find(user => user.id === id);
@@ -87,157 +73,72 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return seasons.filter(season => season.active);
   };
 
-  const addMatch = async (match: Match) => {
-    try {
-      // If the match already exists, update it instead of adding a new one
-      const matchIndex = matches.findIndex(m => m.id === match.id);
-      let updatedMatches;
-      
+  const addMatch = (match: Match) => {
+    // If the match already exists, update it instead of adding a new one
+    setMatches(prev => {
+      const matchIndex = prev.findIndex(m => m.id === match.id);
       if (matchIndex >= 0) {
         // Replace the existing match
-        updatedMatches = [...matches];
+        const updatedMatches = [...prev];
         updatedMatches[matchIndex] = match;
+        return updatedMatches;
       } else {
         // Add as a new match
-        updatedMatches = [...matches, match];
+        return [...prev, match];
       }
-      
-      // Update state
-      setMatches(updatedMatches);
-      
-      // Save to IndexedDB
-      await saveMatch(match);
-    } catch (error) {
-      console.error("Error adding match:", error);
-      toast({
-        title: "Błąd zapisywania meczu",
-        description: "Nie udało się zapisać meczu. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+    });
   };
 
-  const addSeason = async (season: Season) => {
-    try {
-      // Update state
-      setSeasons(prev => [...prev, season]);
-      
-      // Save to IndexedDB
-      await saveSeason(season);
-    } catch (error) {
-      console.error("Error adding season:", error);
-      toast({
-        title: "Błąd zapisywania sezonu",
-        description: "Nie udało się zapisać sezonu. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+  const addSeason = (season: Season) => {
+    setSeasons(prev => [...prev, season]);
   };
 
-  const updateSeasonWithMatch = async (seasonId: string, matchId: string) => {
-    try {
-      const updatedSeasons = seasons.map(season => {
+  const updateSeasonWithMatch = (seasonId: string, matchId: string) => {
+    setSeasons(prev => 
+      prev.map(season => {
         if (season.id === seasonId) {
           // Only add the match ID if it doesn't already exist in the matches array
           if (!season.matches.includes(matchId)) {
-            const updatedSeason = { ...season, matches: [...season.matches, matchId] };
-            // Save to IndexedDB
-            saveSeason(updatedSeason).catch(error => {
-              console.error("Error saving season:", error);
-            });
-            return updatedSeason;
+            return { ...season, matches: [...season.matches, matchId] };
           }
         }
         return season;
-      });
-      
-      setSeasons(updatedSeasons);
-    } catch (error) {
-      console.error("Error updating season with match:", error);
-      toast({
-        title: "Błąd aktualizacji sezonu",
-        description: "Nie udało się dodać meczu do sezonu. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+      })
+    );
   };
 
-  // Clear all matches
-  const clearAllMatches = async () => {
-    try {
-      setMatches([]);
-      await clearMatches();
-    } catch (error) {
-      console.error("Error clearing matches:", error);
-      toast({
-        title: "Błąd czyszczenia meczów",
-        description: "Nie udało się wyczyścić historii meczów. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+  // Clear all matches from the state and localStorage
+  const clearMatches = () => {
+    setMatches([]);
+    localStorage.removeItem('matches');
   };
 
-  // Clear all seasons
-  const clearAllSeasons = async () => {
-    try {
-      setSeasons([]);
-      await clearSeasons();
-    } catch (error) {
-      console.error("Error clearing seasons:", error);
-      toast({
-        title: "Błąd czyszczenia sezonów",
-        description: "Nie udało się wyczyścić sezonów. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+  // Clear all seasons from the state and localStorage
+  const clearSeasons = () => {
+    setSeasons([]);
+    localStorage.removeItem('seasons');
   };
   
   // Delete a specific season by ID
-  const deleteSpecificSeason = async (seasonId: string) => {
-    try {
-      setSeasons(prev => prev.filter(season => season.id !== seasonId));
-      await deleteSeason(seasonId);
-    } catch (error) {
-      console.error("Error deleting season:", error);
-      toast({
-        title: "Błąd usuwania sezonu",
-        description: "Nie udało się usunąć sezonu. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+  const deleteSeason = (seasonId: string) => {
+    setSeasons(prev => prev.filter(season => season.id !== seasonId));
   };
   
   // End a season (mark as inactive)
-  const endSpecificSeason = async (seasonId: string, winnerId?: string) => {
-    try {
-      const updatedSeasons = seasons.map(season => {
+  const endSeason = (seasonId: string, winnerId?: string) => {
+    setSeasons(prev => 
+      prev.map(season => {
         if (season.id === seasonId) {
-          const updatedSeason = { 
+          return { 
             ...season, 
             active: false,
             endDate: new Date().toISOString(),
             winner: winnerId || season.winner
           };
-          
-          // Save to IndexedDB
-          saveSeason(updatedSeason).catch(error => {
-            console.error("Error saving season:", error);
-          });
-          
-          return updatedSeason;
         }
         return season;
-      });
-      
-      setSeasons(updatedSeasons);
-    } catch (error) {
-      console.error("Error ending season:", error);
-      toast({
-        title: "Błąd kończenia sezonu",
-        description: "Nie udało się zakończyć sezonu. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    }
+      })
+    );
   };
 
   return (
@@ -254,11 +155,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addMatch,
         addSeason,
         updateSeasonWithMatch,
-        clearMatches: clearAllMatches,
-        clearSeasons: clearAllSeasons,
-        deleteSeason: deleteSpecificSeason,
-        endSeason: endSpecificSeason,
-        isLoading
+        clearMatches,
+        clearSeasons,
+        deleteSeason,
+        endSeason
       }}
     >
       {children}
