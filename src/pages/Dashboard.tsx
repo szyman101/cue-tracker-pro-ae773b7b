@@ -39,7 +39,16 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6 relative">
-      <div className="flex justify-between items-center">
+      {/* Logo background with 5% visibility */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
+        <img 
+          src="/lovable-uploads/ca7ed6ce-0489-4b0d-9492-511daf16c1e1.png" 
+          alt="Background Logo" 
+          className="w-[80%] max-w-[600px] object-contain"
+        />
+      </div>
+      
+      <div className="flex justify-between items-center relative z-10">
         <div className="flex items-center gap-4">
           <Logo size="small" />
           <h1 className="text-3xl font-bold">
@@ -72,7 +81,7 @@ const Dashboard = () => {
         <SeasonManagement activeSeasons={activeSeasons} />
       )}
 
-      <Tabs defaultValue="history" className="space-y-4">
+      <Tabs defaultValue="history" className="space-y-4 relative z-10">
         <TabsList>
           <TabsTrigger value="history">Historia Meczów</TabsTrigger>
           <TabsTrigger value="seasons">Sezony</TabsTrigger>
