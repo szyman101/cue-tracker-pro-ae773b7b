@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, Calendar, Trophy } from "lucide-react";
 import { Match, Season, User } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatsCardsProps {
   totalMatchesPlayed: number;
@@ -12,6 +13,7 @@ interface StatsCardsProps {
   userSeasons: Season[];
   currentUser: User | null;
   title?: string;
+  isLoading?: boolean;
 }
 
 const StatsCards: React.FC<StatsCardsProps> = ({
@@ -21,7 +23,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
   activeSeasons,
   userSeasons,
   currentUser,
-  title
+  title,
+  isLoading = false
 }) => {
   return (
     <div className="space-y-2">
@@ -35,10 +38,19 @@ const StatsCards: React.FC<StatsCardsProps> = ({
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMatchesPlayed}</div>
-            <p className="text-xs text-muted-foreground">
-              Wygranych: {matchesWon} ({winRate}%)
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalMatchesPlayed}</div>
+                <p className="text-xs text-muted-foreground">
+                  Wygranych: {matchesWon} ({winRate}%)
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -47,10 +59,19 @@ const StatsCards: React.FC<StatsCardsProps> = ({
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeSeasons.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Wszystkich sezonów: {userSeasons.length}
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{activeSeasons.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Wszystkich sezonów: {userSeasons.length}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -59,14 +80,23 @@ const StatsCards: React.FC<StatsCardsProps> = ({
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {userSeasons.filter(season => season.winner === currentUser?.id).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Procent wygranych: {userSeasons.length > 0 
-                ? Math.round((userSeasons.filter(season => season.winner === currentUser?.id).length / userSeasons.length) * 100) 
-                : 0}%
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {userSeasons.filter(season => season.winner === currentUser?.id).length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Procent wygranych: {userSeasons.length > 0 
+                    ? Math.round((userSeasons.filter(season => season.winner === currentUser?.id).length / userSeasons.length) * 100) 
+                    : 0}%
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,13 +1,15 @@
 
 import React from "react";
 import { Season, User } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SeasonHistoryProps {
   userSeasons: Season[];
   currentUser: User | null;
+  isLoading?: boolean;
 }
 
-const SeasonHistory: React.FC<SeasonHistoryProps> = ({ userSeasons, currentUser }) => {
+const SeasonHistory: React.FC<SeasonHistoryProps> = ({ userSeasons, currentUser, isLoading = false }) => {
   return (
     <div className="rounded-md border">
       <div className="grid grid-cols-5 p-4 font-medium">
@@ -18,7 +20,18 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ userSeasons, currentUser 
         <div>Status</div>
       </div>
       <div className="divide-y">
-        {userSeasons.map((season) => (
+        {isLoading ? (
+          // Loading skeletons
+          Array(3).fill(0).map((_, index) => (
+            <div key={index} className="grid grid-cols-5 p-4">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-6 w-28" />
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+          ))
+        ) : userSeasons.map((season) => (
           <div key={season.id} className="grid grid-cols-5 p-4 hover:bg-muted/50">
             <div>{season.name}</div>
             <div>{new Date(season.startDate).toLocaleDateString()}</div>
@@ -42,7 +55,7 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ userSeasons, currentUser 
             </div>
           </div>
         ))}
-        {userSeasons.length === 0 && (
+        {!isLoading && userSeasons.length === 0 && (
           <div className="p-4 text-center text-muted-foreground">Brak sezonów</div>
         )}
       </div>
