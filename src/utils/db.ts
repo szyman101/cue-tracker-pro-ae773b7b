@@ -1,21 +1,21 @@
 
 import { Match, Season } from "@/types";
 
-// Nazwa bazy danych
+// Database name
 const DB_NAME = "billiards-tracker";
 const DB_VERSION = 1;
 
-// Nazwy obiektów przechowywania
+// Store names
 const MATCHES_STORE = "matches";
 const SEASONS_STORE = "seasons";
 
-// Inicjalizacja bazy danych
+// Initialize the database
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
-      console.error("Błąd podczas otwierania bazy danych");
+      console.error("Error opening database");
       reject(request.error);
     };
 
@@ -26,12 +26,12 @@ export const initDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = (event) => {
       const db = request.result;
       
-      // Utwórz obiekt przechowywania dla meczów, jeśli nie istnieje
+      // Create object store for matches if it doesn't exist
       if (!db.objectStoreNames.contains(MATCHES_STORE)) {
         db.createObjectStore(MATCHES_STORE, { keyPath: "id" });
       }
       
-      // Utwórz obiekt przechowywania dla sezonów, jeśli nie istnieje
+      // Create object store for seasons if it doesn't exist
       if (!db.objectStoreNames.contains(SEASONS_STORE)) {
         db.createObjectStore(SEASONS_STORE, { keyPath: "id" });
       }
@@ -39,7 +39,7 @@ export const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// Funkcja pomocnicza do wykonywania operacji na bazie danych
+// Helper function for database operations
 const withDB = async <T>(
   storeName: string,
   mode: IDBTransactionMode,
@@ -56,12 +56,12 @@ const withDB = async <T>(
   });
 };
 
-// Dodaj lub zaktualizuj mecz
+// Add or update match
 export const addMatch = async (match: Match): Promise<void> => {
   await withDB<IDBValidKey>(MATCHES_STORE, "readwrite", (store) => store.put(match));
 };
 
-// Pobierz wszystkie mecze - poprawiona wersja
+// Get all matches
 export const getMatches = async (): Promise<Match[]> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
@@ -77,7 +77,7 @@ export const getMatches = async (): Promise<Match[]> => {
         matches.push(cursor.value);
         cursor.continue();
       } else {
-        // Gdy wszystkie wyniki zostały przetworzone (cursor jest null)
+        // When all results have been processed (cursor is null)
         resolve(matches);
       }
     };
@@ -92,17 +92,17 @@ export const getMatches = async (): Promise<Match[]> => {
   });
 };
 
-// Usuń wszystkie mecze
+// Clear all matches
 export const clearMatches = async (): Promise<void> => {
   await withDB<void>(MATCHES_STORE, "readwrite", (store) => store.clear());
 };
 
-// Dodaj lub zaktualizuj sezon
+// Add or update season
 export const addSeason = async (season: Season): Promise<void> => {
   await withDB<IDBValidKey>(SEASONS_STORE, "readwrite", (store) => store.put(season));
 };
 
-// Pobierz wszystkie sezony - poprawiona wersja
+// Get all seasons
 export const getSeasons = async (): Promise<Season[]> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
@@ -118,7 +118,7 @@ export const getSeasons = async (): Promise<Season[]> => {
         seasons.push(cursor.value);
         cursor.continue();
       } else {
-        // Gdy wszystkie wyniki zostały przetworzone (cursor jest null)
+        // When all results have been processed (cursor is null)
         resolve(seasons);
       }
     };
@@ -133,12 +133,12 @@ export const getSeasons = async (): Promise<Season[]> => {
   });
 };
 
-// Usuń wszystkie sezony
+// Clear all seasons
 export const clearSeasons = async (): Promise<void> => {
   await withDB<void>(SEASONS_STORE, "readwrite", (store) => store.clear());
 };
 
-// Usuń konkretny sezon
+// Delete specific season
 export const deleteSeason = async (seasonId: string): Promise<void> => {
   await withDB<void>(SEASONS_STORE, "readwrite", (store) => store.delete(seasonId));
 };

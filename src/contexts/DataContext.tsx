@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, Match, Season, GameType } from "../types";
+import { User, Match, Season } from "../types";
 import { initialUsers } from "../data/initialData";
 import * as db from "../utils/db";
 
@@ -38,22 +38,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ładowanie danych z IndexedDB przy inicjalizacji
+  // Load data from IndexedDB on initialization
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Inicjalizacja bazy danych
+        // Initialize database
         await db.initDB();
         
-        // Pobieranie danych
+        // Fetch data
         const loadedMatches = await db.getMatches();
         const loadedSeasons = await db.getSeasons();
+        
+        console.log("Loaded matches:", loadedMatches);
+        console.log("Loaded seasons:", loadedSeasons);
         
         setMatches(Array.isArray(loadedMatches) ? loadedMatches : []);
         setSeasons(Array.isArray(loadedSeasons) ? loadedSeasons : []);
       } catch (error) {
-        console.error("Błąd podczas ładowania danych:", error);
-        // W przypadku błędów, inicjalizujemy puste tablice
+        console.error("Error loading data:", error);
+        // Initialize empty arrays in case of errors
         setMatches([]);
         setSeasons([]);
       } finally {
@@ -64,7 +67,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadData();
   }, []);
 
-  // Zapisywanie meczów do IndexedDB gdy się zmienią
+  // Save matches to IndexedDB when they change
   useEffect(() => {
     if (isLoading) return;
     
@@ -76,14 +79,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (error) {
-        console.error("Błąd podczas zapisywania meczów:", error);
+        console.error("Error saving matches:", error);
       }
     };
 
     saveMatches();
   }, [matches, isLoading]);
 
-  // Zapisywanie sezonów do IndexedDB gdy się zmienią
+  // Save seasons to IndexedDB when they change
   useEffect(() => {
     if (isLoading) return;
     
@@ -95,7 +98,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (error) {
-        console.error("Błąd podczas zapisywania sezonów:", error);
+        console.error("Error saving seasons:", error);
       }
     };
 
@@ -131,12 +134,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const matchIndex = prev.findIndex(m => m.id === match.id);
       if (matchIndex >= 0) {
-        // Zastąp istniejący mecz
+        // Replace existing match
         const updatedMatches = [...prev];
         updatedMatches[matchIndex] = match;
         return updatedMatches;
       } else {
-        // Dodaj jako nowy mecz
+        // Add as new match
         return [...prev, match];
       }
     });
@@ -152,7 +155,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return prev.map(season => {
         if (season.id === seasonId) {
-          // Dodaj ID meczu tylko jeśli nie istnieje już w tablicy meczów
+          // Add match ID only if it doesn't already exist in the matches array
           if (!season.matches.includes(matchId)) {
             return { ...season, matches: [...season.matches, matchId] };
           }
@@ -162,25 +165,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Wyczyść wszystkie mecze
+  // Clear all matches
   const clearMatches = async () => {
     await db.clearMatches();
     setMatches([]);
   };
 
-  // Wyczyść wszystkie sezony
+  // Clear all seasons
   const clearSeasons = async () => {
     await db.clearSeasons();
     setSeasons([]);
   };
   
-  // Usuń konkretny sezon po ID
+  // Delete specific season by ID
   const deleteSeason = async (seasonId: string) => {
     await db.deleteSeason(seasonId);
     setSeasons(prev => prev ? prev.filter(season => season.id !== seasonId) : []);
   };
   
-  // Zakończ sezon (oznacz jako nieaktywny)
+  // End season (mark as inactive)
   const endSeason = (seasonId: string, winnerId?: string) => {
     setSeasons(prev => {
       if (!prev) return prev;
@@ -194,7 +197,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             winner: winnerId || season.winner
           };
           
-          // Zapisz zaktualizowany sezon w bazie danych
+          // Save updated season to database
           db.addSeason(updatedSeason);
           
           return updatedSeason;
@@ -205,7 +208,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   if (isLoading) {
-    return <div>Ładowanie danych...</div>;
+    return <div>Loading data...</div>;
   }
 
   return (
