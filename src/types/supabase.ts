@@ -34,7 +34,7 @@ export type Database = {
   };
 };
 
-// Rozszerzenie typów dla tabel Supabase
+// Table type definitions for Supabase
 export type ProfilesTable = {
   id: string;
   nick: string;

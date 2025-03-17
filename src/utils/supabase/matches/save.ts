@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Match } from "@/types";
 import { Json } from "@/integrations/supabase/types";
 import { ensureUuid } from "../utils";
-import { createProfileIfNotExists } from "../profiles";
 import { saveLocalMatch } from "./storage";
 
 // Save a match directly to Supabase without requiring profiles to exist
@@ -34,14 +33,6 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     console.log("Saving match to local IndexedDB as fallback");
     // First, try to save locally to ensure data isn't lost even if Supabase save fails
     await saveLocalMatch(match);
-    
-    // Ensure the profiles exist before saving the match
-    await createProfileIfNotExists(playerA, playerAName);
-    await createProfileIfNotExists(playerB, playerBName);
-    if (winner) {
-      const winnerName = winner === playerA ? playerAName : playerBName;
-      await createProfileIfNotExists(winner, winnerName);
-    }
     
     console.log("Saving match to Supabase");
     

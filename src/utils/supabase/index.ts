@@ -3,6 +3,4 @@
 export * from './realtime';
 export * from './matches';
 export * from './seasons';
-export * from './profiles';
-export * from './migration';
 export * from './utils';
