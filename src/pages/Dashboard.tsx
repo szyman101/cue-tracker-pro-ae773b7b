@@ -39,12 +39,12 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6 relative">
-      {/* Logo background with 5% visibility */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
+      {/* Logo background with 2% visibility */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] z-0">
         <img 
           src="/lovable-uploads/ca7ed6ce-0489-4b0d-9492-511daf16c1e1.png" 
           alt="Background Logo" 
-          className="w-[80%] max-w-[600px] object-contain"
+          className="w-full h-full object-contain"
         />
       </div>
       
