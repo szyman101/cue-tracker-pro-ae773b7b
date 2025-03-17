@@ -1,53 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Match, GameType } from "@/types";
+import { Match } from "@/types";
 import { Json } from "@/integrations/supabase/types";
-import { ensureUuid } from "./utils";
-import { createProfileIfNotExists } from "./profiles";
-
-// Fetch all matches from Supabase
-export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*');
-      
-    if (error) {
-      throw error;
-    }
-    
-    return data.map(match => {
-      const gamesData = match.games as unknown;
-      const games = Array.isArray(gamesData) 
-        ? gamesData.map(game => ({
-            type: (game as any).type as GameType,
-            scoreA: (game as any).scoreA as number,
-            scoreB: (game as any).scoreB as number,
-            winner: (game as any).winner as string,
-            breakAndRun: (game as any).breakAndRun as boolean | undefined
-          })) 
-        : [];
-      
-      return {
-        id: match.id,
-        date: match.date,
-        playerA: match.player_a,
-        playerB: match.player_b,
-        playerAName: match.player_a_name || '',
-        playerBName: match.player_b_name || '',
-        games: games,
-        winner: match.winner || '',
-        timeElapsed: match.time_elapsed || 0,
-        seasonId: match.season_id || undefined,
-        gamesToWin: match.games_to_win || 3,
-        notes: match.notes || undefined
-      };
-    });
-  } catch (error) {
-    console.error("Error while fetching matches from Supabase:", error);
-    return [];
-  }
-};
+import { ensureUuid } from "../utils";
+import { createProfileIfNotExists } from "../profiles";
+import { saveLocalMatch } from "./storage";
 
 // Save a match directly to Supabase without requiring profiles to exist
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
@@ -104,19 +61,7 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     
     console.log("Saving match to local IndexedDB as fallback");
     // First, try to save locally to ensure data isn't lost even if Supabase save fails
-    try {
-      // Use the local IndexedDB database to save the match
-      const db = await window.indexedDB.open("billiards-tracker", 1);
-      db.onsuccess = () => {
-        const database = db.result;
-        const transaction = database.transaction("matches", "readwrite");
-        const store = transaction.objectStore("matches");
-        store.put(match);
-        console.log("Match saved to local IndexedDB successfully");
-      };
-    } catch (localError) {
-      console.error("Error saving match to local IndexedDB:", localError);
-    }
+    await saveLocalMatch(match);
     
     console.log("Saving match to Supabase after profile creation attempts");
     
@@ -184,42 +129,6 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
     }
   } catch (error) {
     console.error("Error saving match to Supabase:", error);
-    throw error;
-  }
-};
-
-// Delete a match from Supabase
-export const deleteMatchFromSupabase = async (matchId: string): Promise<void> => {
-  try {
-    console.log("Deleting match from Supabase:", matchId);
-    
-    const uuid = ensureUuid(matchId);
-    
-    // First, remove any season-match relations for this match
-    const { error: relationError } = await supabase
-      .from('season_matches')
-      .delete()
-      .eq('match_id', uuid);
-      
-    if (relationError) {
-      console.error("Error deleting season-match relations:", relationError);
-      // Continue with match deletion even if relation deletion fails
-    }
-    
-    // Then delete the match itself
-    const { error } = await supabase
-      .from('matches')
-      .delete()
-      .eq('id', uuid);
-      
-    if (error) {
-      console.error("Error deleting match:", error);
-      throw error;
-    }
-    
-    console.log("Match deleted successfully from Supabase");
-  } catch (error) {
-    console.error("Error deleting match from Supabase:", error);
     throw error;
   }
 };
