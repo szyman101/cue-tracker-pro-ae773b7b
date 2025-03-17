@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Timer } from 'lucide-react';
+import { Timer, Flag } from 'lucide-react';
 import ScoreCounter from './ScoreCounter';
 import MatchControls from './MatchControls';
 import { GameResult } from '@/types';

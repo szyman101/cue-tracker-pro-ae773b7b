@@ -27,8 +27,14 @@ const ScoreCounter: React.FC<ScoreCounterProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center">
-        <h2 className="text-3xl font-bold text-center mb-1">
-          {playerName} {isBreak && <Flag className="inline-block w-4 h-4 ml-1" />}
+        <h2 className="text-3xl font-bold text-center mb-1 flex items-center justify-center">
+          {playerName} 
+          {isBreak && (
+            <div className="ml-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full flex items-center">
+              <Flag className="w-3 h-3 mr-1" /> 
+              ROZBIJA
+            </div>
+          )}
         </h2>
         <div className="text-sm mb-3">
           <Button 
