@@ -6,10 +6,9 @@ import { Json } from "@/integrations/supabase/types";
 // Włączenie funkcji realtime dla tabel
 const enableRealtimeForTable = async (tableName: string) => {
   try {
-    // Fixed by using explicit type casting to any to avoid the 'never' type error
     const { error } = await supabase.rpc('enable_realtime', {
       table_name: tableName
-    } as any);
+    });
     
     if (error) {
       console.error(`Błąd podczas włączania realtime dla tabeli ${tableName}:`, error);
@@ -40,7 +39,6 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
     }
     
     return data.map(match => {
-      // Fixed type conversion issue by properly casting the data
       const gamesData = match.games as unknown;
       const games = Array.isArray(gamesData) 
         ? gamesData.map(game => ({
@@ -85,7 +83,6 @@ export const fetchSeasonsFromSupabase = async (): Promise<Season[]> => {
     }
     
     return data.map(season => {
-      // Added proper type conversion for game_types array
       const gameTypes = season.game_types as unknown as GameType[];
       
       return {
@@ -133,21 +130,18 @@ export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: 
 
 // Generuj prawidłowe UUID jeśli string nie jest już UUID
 const ensureUuid = (id: string): string => {
-  // Sprawdź czy string jest już w formacie UUID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if (uuidRegex.test(id)) {
     return id;
   }
   
-  // Jeśli nie jest UUID, wygeneruj deterministyczny UUID na podstawie stringa
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     const char = id.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   
-  // Tworzenie "fałszywego" UUID na podstawie hasha
   const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (hash + Math.random() * 16) % 16 | 0;
     hash = Math.floor(hash / 16);
@@ -160,14 +154,20 @@ const ensureUuid = (id: string): string => {
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
-    // Convert GameResult[] to Json with proper type casting
     const gamesJson = match.games as unknown as Json;
     
-    // Ensure we have proper UUIDs for player IDs and winner
     const playerA = ensureUuid(match.playerA);
     const playerB = ensureUuid(match.playerB);
     const winner = match.winner ? ensureUuid(match.winner) : null;
     const seasonId = match.seasonId ? ensureUuid(match.seasonId) : null;
+    
+    console.log("Saving match to Supabase with IDs:", {
+      playerA,
+      playerB,
+      winner,
+      seasonId,
+      matchId: match.id
+    });
     
     const { error } = await supabase
       .from('matches')
@@ -187,6 +187,7 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
       });
       
     if (error) {
+      console.error("Error details:", error);
       throw error;
     }
   } catch (error) {
@@ -198,9 +199,7 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
 // Zapisywanie sezonu do Supabase
 export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
   try {
-    // Ensure season ID is a proper UUID
     const seasonId = ensureUuid(season.id);
-    // Ensure winner ID is a proper UUID if present
     const winnerId = season.winner ? ensureUuid(season.winner) : null;
     
     const { error } = await supabase
@@ -224,7 +223,6 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
       throw error;
     }
     
-    // Zapisywanie powiązań mecz-sezon
     for (const matchId of season.matches) {
       await saveSeasonMatchRelation(seasonId, matchId);
     }
@@ -237,7 +235,6 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
 // Zapisywanie relacji sezon-mecz
 export const saveSeasonMatchRelation = async (seasonId: string, matchId: string): Promise<void> => {
   try {
-    // Ensure IDs are proper UUIDs
     const safeSeasonId = ensureUuid(seasonId);
     const safeMatchId = ensureUuid(matchId);
     
@@ -268,18 +265,14 @@ export const migrateDataToSupabase = async (): Promise<{
   let seasonsMigrated = 0;
   
   try {
-    // Inicjalizacja IndexedDB
     await db.initDB();
     
-    // Pobierz wszystkie mecze z IndexedDB
     const localMatches = await db.getMatches();
     console.log(`Znaleziono ${localMatches.length} lokalnych meczy do migracji`);
     
-    // Pobierz wszystkie sezony z IndexedDB
     const localSeasons = await db.getSeasons();
     console.log(`Znaleziono ${localSeasons.length} lokalnych sezonów do migracji`);
     
-    // Migruj mecze
     for (const match of localMatches) {
       try {
         await saveMatchToSupabase(match);
@@ -290,7 +283,6 @@ export const migrateDataToSupabase = async (): Promise<{
       }
     }
     
-    // Migruj sezony
     for (const season of localSeasons) {
       try {
         await saveSeasonToSupabase(season);
