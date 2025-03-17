@@ -40,15 +40,30 @@ const MatchView = () => {
   const activeSeason = match?.seasonId ? activeSeasons.find(s => s.id === match.seasonId) : null;
 
   const endMatch = () => {
+    // First, finish the current game if there's a score
+    if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
+      const winner = currentGame.scoreA > currentGame.scoreB ? 'A' : 'B';
+      finishCurrentGame(winner);
+    }
+    
     // Calculate winner based on wins
     const matchWinner = winsA > winsB ? playerA?.id : winsB > winsA ? playerB?.id : 'tie';
     
+    // Calculate elapsed time in seconds
+    const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
+    
+    // Create the updated match object with all required data
     const updatedMatch: Match = {
       ...match,
-      games,
+      playerA: match.playerA,
+      playerB: match.playerB,
+      games: [...games], // Make sure to use the latest games array
       winner: matchWinner,
-      timeElapsed: Math.floor((currentTime.getTime() - startTime.getTime()) / 1000)
+      timeElapsed: elapsedSeconds,
+      seasonId: match.seasonId
     };
+    
+    console.log('Saving match:', updatedMatch);
     
     // Save the match to the data store
     addMatch(updatedMatch);
@@ -66,17 +81,6 @@ const MatchView = () => {
     });
     
     navigate('/dashboard');
-  };
-
-  // Function to determine the winner based on the last game's scores
-  const determineWinner = () => {
-    if (currentGame.scoreA > currentGame.scoreB) {
-      return 'A';
-    } else if (currentGame.scoreB > currentGame.scoreA) {
-      return 'B';
-    }
-    // Default to A if equal (can be changed as needed)
-    return 'A';
   };
 
   const handleFinishGame = (winner: 'A' | 'B') => {

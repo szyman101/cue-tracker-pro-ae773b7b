@@ -63,19 +63,17 @@ export const useMatchState = ({ match }: UseMatchStateProps) => {
       
       if (increment) {
         newScore += 1;
-      } else {
-        newScore = Math.max(0, newScore - 1);
-      }
-      
-      // Update next break based on break rule
-      if (increment) {
-        if (breakRule === 'alternate') {
-          // Toggle the breaking player after each score change
-          setNextBreak(currentBreak => (currentBreak === 'A' ? 'B' : 'A'));
-        } else if (breakRule === 'winner') {
+        
+        // Update next break based on break rule only when incrementing score
+        if (breakRule === 'winner') {
           // If winner breaks, the player who scored gets the next break
           setNextBreak(player);
+        } else if (breakRule === 'alternate') {
+          // Toggle the breaking player after each score change
+          setNextBreak(currentBreak => (currentBreak === 'A' ? 'B' : 'A'));
         }
+      } else {
+        newScore = Math.max(0, newScore - 1);
       }
       
       return {
@@ -100,12 +98,12 @@ export const useMatchState = ({ match }: UseMatchStateProps) => {
     }
     
     // Update next break based on the break rule
-    if (breakRule === 'alternate') {
-      // Toggle break for next player
-      setNextBreak(player === 'A' ? 'B' : 'A');
-    } else if (breakRule === 'winner') {
+    if (breakRule === 'winner') {
       // Winner of the break and run gets the next break
       setNextBreak(player);
+    } else if (breakRule === 'alternate') {
+      // Toggle break for next player
+      setNextBreak(player === 'A' ? 'B' : 'A');
     }
   };
 
