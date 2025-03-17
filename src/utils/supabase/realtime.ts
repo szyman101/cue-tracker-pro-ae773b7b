@@ -8,9 +8,11 @@ interface EnableRealtimeParams {
 
 export const enableRealtimeForTable = async (tableName: string) => {
   try {
+    // @ts-ignore - Ignoring type checking for custom RPC function
+    // This is necessary because the Supabase types don't include this custom function
     const { error } = await supabase.rpc('enable_realtime', {
       table_name: tableName
-    } as Record<string, unknown>);
+    });
     
     if (error) {
       console.error(`Błąd podczas włączania realtime dla tabeli ${tableName}:`, error);
