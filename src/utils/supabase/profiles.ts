@@ -39,7 +39,7 @@ export const createProfileIfNotExists = async (userId: string, nickname: string)
         role: 'player'
       });
       
-      // Use upset to either update or create the profile
+      // Use upsert to either update or create the profile
       const { data, error } = await supabase
         .from('profiles')
         .upsert({

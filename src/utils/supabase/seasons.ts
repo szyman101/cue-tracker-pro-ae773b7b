@@ -34,12 +34,12 @@ export const fetchSeasonsFromSupabase = async (): Promise<Season[]> => {
       };
     });
   } catch (error) {
-    console.error("Błąd podczas pobierania sezonów z Supabase:", error);
+    console.error("Error while fetching seasons from Supabase:", error);
     return [];
   }
 };
 
-// Fetch season-match relationships from Supabase
+// Fetch season-match relationships
 export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: string}[]> => {
   try {
     const { data, error } = await supabase
@@ -55,7 +55,7 @@ export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: 
       matchId: rel.match_id
     }));
   } catch (error) {
-    console.error("Błąd podczas pobierania powiązań sezon-mecz:", error);
+    console.error("Error while fetching season-match relationships:", error);
     return [];
   }
 };
@@ -91,12 +91,12 @@ export const saveSeasonToSupabase = async (season: Season): Promise<void> => {
       await saveSeasonMatchRelation(seasonId, matchId);
     }
   } catch (error) {
-    console.error("Błąd podczas zapisywania sezonu do Supabase:", error);
+    console.error("Error saving season to Supabase:", error);
     throw error;
   }
 };
 
-// Save a season-match relationship to Supabase
+// Save season-match relationship
 export const saveSeasonMatchRelation = async (seasonId: string, matchId: string): Promise<void> => {
   try {
     const safeSeasonId = ensureUuid(seasonId);
@@ -107,13 +107,16 @@ export const saveSeasonMatchRelation = async (seasonId: string, matchId: string)
       .upsert({
         season_id: safeSeasonId,
         match_id: safeMatchId
+      }, {
+        onConflict: 'season_id,match_id',
+        ignoreDuplicates: true
       });
       
     if (error) {
       throw error;
     }
   } catch (error) {
-    console.error("Błąd podczas zapisywania relacji sezon-mecz:", error);
+    console.error("Error saving season-match relationship:", error);
     throw error;
   }
 };
