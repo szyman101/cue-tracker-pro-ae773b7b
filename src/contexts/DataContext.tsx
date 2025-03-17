@@ -70,7 +70,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addMatch = (match: Match) => {
-    setMatches(prev => [...prev, match]);
+    // If the match already exists, update it instead of adding a new one
+    setMatches(prev => {
+      const matchIndex = prev.findIndex(m => m.id === match.id);
+      if (matchIndex >= 0) {
+        // Replace the existing match
+        const updatedMatches = [...prev];
+        updatedMatches[matchIndex] = match;
+        return updatedMatches;
+      } else {
+        // Add as a new match
+        return [...prev, match];
+      }
+    });
   };
 
   const addSeason = (season: Season) => {
@@ -79,11 +91,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateSeasonWithMatch = (seasonId: string, matchId: string) => {
     setSeasons(prev => 
-      prev.map(season => 
-        season.id === seasonId 
-          ? { ...season, matches: [...season.matches, matchId] }
-          : season
-      )
+      prev.map(season => {
+        if (season.id === seasonId) {
+          // Only add the match ID if it doesn't already exist in the matches array
+          if (!season.matches.includes(matchId)) {
+            return { ...season, matches: [...season.matches, matchId] };
+          }
+        }
+        return season;
+      })
     );
   };
 

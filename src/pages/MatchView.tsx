@@ -52,21 +52,23 @@ const MatchView = () => {
     // Calculate elapsed time in seconds
     const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
     
-    // Create the updated match object with all required data
-    const updatedMatch: Match = {
-      ...match,
+    // Create a completely new match object with all required data
+    const completedMatch: Match = {
+      id: match.id,
+      date: match.date,
       playerA: match.playerA,
       playerB: match.playerB,
-      games: [...games], // Make sure to use the latest games array
+      games: games, // Use the games array from useMatchState
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
-      seasonId: match.seasonId
+      seasonId: match.seasonId,
+      gamesToWin: match.gamesToWin
     };
     
-    console.log('Saving match:', updatedMatch);
+    console.log('Saving match:', completedMatch);
     
     // Save the match to the data store
-    addMatch(updatedMatch);
+    addMatch(completedMatch);
     
     // If this match is part of a season, update the season
     if (match.seasonId) {
