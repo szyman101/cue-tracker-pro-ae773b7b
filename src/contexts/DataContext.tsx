@@ -44,6 +44,55 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState(true); // Domyślnie Supabase
 
+  // Funkcja do synchronizacji danych z Supabase - must be defined before it's used
+  const syncWithSupabase = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Pobierz dane z Supabase
+      const supabaseMatches = await supabaseUtils.fetchMatchesFromSupabase();
+      const supabaseSeasons = await supabaseUtils.fetchSeasonsFromSupabase();
+      const seasonMatches = await supabaseUtils.fetchSeasonMatches();
+      
+      // Uzupełnij informacje o meczach w sezonach
+      const enhancedSeasons = supabaseSeasons.map(season => {
+        const matches = seasonMatches
+          .filter(rel => rel.seasonId === season.id)
+          .map(rel => rel.matchId);
+        
+        return {
+          ...season,
+          matches
+        };
+      });
+      
+      // Ustaw dane w stanie
+      setMatches(supabaseMatches);
+      setSeasons(enhancedSeasons);
+      
+      console.log("Dane zsynchronizowane z Supabase:", {
+        matches: supabaseMatches.length,
+        seasons: enhancedSeasons.length
+      });
+      
+      toast({
+        title: "Dane zaktualizowane",
+        description: "Dane zostały pomyślnie zsynchronizowane z Supabase.",
+        duration: 3000
+      });
+    } catch (error) {
+      console.error("Błąd podczas synchronizacji z Supabase:", error);
+      toast({
+        title: "Błąd synchronizacji",
+        description: "Nie udało się zsynchronizować danych z Supabase.",
+        variant: "destructive",
+        duration: 5000
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Subskrypcja do zmian w czasie rzeczywistym
   useEffect(() => {
     if (!isUsingSupabase) return;
@@ -99,55 +148,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Funkcja pozostawiona dla kompletności, ale przełącznik jest wyłączony w UI
     setIsUsingSupabase(!isUsingSupabase);
   };
-
-  // Funkcja do synchronizacji danych z Supabase
-  const syncWithSupabase = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Pobierz dane z Supabase
-      const supabaseMatches = await supabaseUtils.fetchMatchesFromSupabase();
-      const supabaseSeasons = await supabaseUtils.fetchSeasonsFromSupabase();
-      const seasonMatches = await supabaseUtils.fetchSeasonMatches();
-      
-      // Uzupełnij informacje o meczach w sezonach
-      const enhancedSeasons = supabaseSeasons.map(season => {
-        const matches = seasonMatches
-          .filter(rel => rel.seasonId === season.id)
-          .map(rel => rel.matchId);
-        
-        return {
-          ...season,
-          matches
-        };
-      });
-      
-      // Ustaw dane w stanie
-      setMatches(supabaseMatches);
-      setSeasons(enhancedSeasons);
-      
-      console.log("Dane zsynchronizowane z Supabase:", {
-        matches: supabaseMatches.length,
-        seasons: enhancedSeasons.length
-      });
-      
-      toast({
-        title: "Dane zaktualizowane",
-        description: "Dane zostały pomyślnie zsynchronizowane z Supabase.",
-        duration: 3000
-      });
-    } catch (error) {
-      console.error("Błąd podczas synchronizacji z Supabase:", error);
-      toast({
-        title: "Błąd synchronizacji",
-        description: "Nie udało się zsynchronizować danych z Supabase.",
-        variant: "destructive",
-        duration: 5000
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   // Load data from source on initialization and when source changes
   useEffect(() => {
@@ -462,7 +462,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error("Błąd podczas zakończenia sezonu w Supabase:", error);
                 toast({
                   title: "Błąd",
-                  description: "Nie udało się zakończyć sezonu. Spróbuj ponownie.",
+                  description: "Nie uda��o się zakończyć sezonu. Spróbuj ponownie.",
                   variant: "destructive"
                 });
               });
@@ -511,3 +511,4 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </DataContext.Provider>
   );
 };
+

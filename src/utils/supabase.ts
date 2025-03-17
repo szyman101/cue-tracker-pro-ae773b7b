@@ -1,13 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Match, Season } from "@/types";
+import { Match, Season, GameType, GameResult } from "@/types";
 import * as db from "./db";
+import { Json } from "@/integrations/supabase/types";
 
 // Włączenie funkcji realtime dla tabel
 const enableRealtimeForTable = async (tableName: string) => {
   try {
     const { error } = await supabase.rpc('supabase_functions.enable_realtime', {
-      table_name: tableName
+      table_name: tableName as any
     });
     
     if (error) {
@@ -46,7 +47,7 @@ export const fetchMatchesFromSupabase = async (): Promise<Match[]> => {
         playerB: match.player_b,
         playerAName: match.player_a_name || '',
         playerBName: match.player_b_name || '',
-        games: match.games || [],
+        games: match.games as GameResult[] || [],
         winner: match.winner || '',
         timeElapsed: match.time_elapsed || 0,
         seasonId: match.season_id || undefined,
@@ -77,7 +78,7 @@ export const fetchSeasonsFromSupabase = async (): Promise<Season[]> => {
         name: season.name,
         startDate: season.start_date,
         endDate: season.end_date || undefined,
-        gameTypes: season.game_types,
+        gameTypes: season.game_types as GameType[],
         matchesToWin: season.matches_to_win,
         breakRule: season.break_rule as "winner" | "alternate",
         prize: season.prize || undefined,
@@ -118,6 +119,9 @@ export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: 
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
+    // Convert GameResult[] to Json
+    const gamesJson = match.games as unknown as Json;
+    
     const { error } = await supabase
       .from('matches')
       .upsert({
@@ -127,7 +131,7 @@ export const saveMatchToSupabase = async (match: Match): Promise<void> => {
         player_b: match.playerB,
         player_a_name: match.playerAName,
         player_b_name: match.playerBName,
-        games: match.games,
+        games: gamesJson,
         winner: match.winner,
         time_elapsed: match.timeElapsed,
         season_id: match.seasonId,
