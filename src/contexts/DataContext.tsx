@@ -5,6 +5,7 @@ import * as db from "../utils/db";
 import * as supabaseUtils from "../utils/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteMatchFromSupabase } from "@/utils/supabase/matches";
 
 interface DataContextType {
   users: User[];
@@ -448,7 +449,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteMatch = async (matchId: string) => {
     try {
       if (isUsingSupabase) {
-        await supabaseUtils.deleteMatchFromSupabase(matchId);
+        await deleteMatchFromSupabase(matchId);
         setMatches(prev => prev ? prev.filter(match => match.id !== matchId) : []);
         toast({
           title: "Mecz usunięty",

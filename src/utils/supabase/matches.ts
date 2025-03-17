@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Match, GameType } from "@/types";
 import { Json } from "@/integrations/supabase/types";
@@ -140,6 +141,7 @@ export const deleteMatchFromSupabase = async (matchId: string): Promise<void> =>
     
     const uuid = ensureUuid(matchId);
     
+    // First, remove any season-match relations for this match
     const { error: relationError } = await supabase
       .from('season_matches')
       .delete()
@@ -149,6 +151,7 @@ export const deleteMatchFromSupabase = async (matchId: string): Promise<void> =>
       console.error("Error deleting season-match relations:", relationError);
     }
     
+    // Then delete the match itself
     const { error } = await supabase
       .from('matches')
       .delete()
