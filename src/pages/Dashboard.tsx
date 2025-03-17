@@ -42,11 +42,6 @@ const Dashboard = () => {
     ? Math.round((secondUserMatchesWon / secondUserMatches.length) * 100) 
     : 0;
 
-  const clearMatchesAndSeasons = () => {
-    clearMatches();
-    clearSeasons();
-  };
-
   return (
     <div className="container mx-auto py-6 space-y-6 relative">
       {/* Logo background with 2% visibility */}
@@ -74,7 +69,7 @@ const Dashboard = () => {
         </div>
         <div className="flex gap-4">
           {isAdmin ? (
-            <AdminControls clearMatchesAndSeasons={clearMatchesAndSeasons} />
+            <AdminControls />
           ) : (
             <UserControls />
           )}

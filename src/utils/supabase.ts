@@ -8,7 +8,7 @@ import { Json } from "@/integrations/supabase/types";
 const enableRealtimeForTable = async (tableName: string) => {
   try {
     const { error } = await supabase.rpc('supabase_functions.enable_realtime', {
-      table_name: tableName as any
+      table_name: tableName
     });
     
     if (error) {
@@ -119,7 +119,7 @@ export const fetchSeasonMatches = async (): Promise<{seasonId: string, matchId: 
 // Zapisywanie meczu do Supabase
 export const saveMatchToSupabase = async (match: Match): Promise<void> => {
   try {
-    // Convert GameResult[] to Json
+    // Convert GameResult[] to Json with proper type casting
     const gamesJson = match.games as unknown as Json;
     
     const { error } = await supabase
