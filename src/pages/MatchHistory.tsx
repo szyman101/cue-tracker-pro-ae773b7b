@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -47,7 +46,22 @@ const MatchHistory = () => {
                 
                 console.log(`Match ${match.id} games:`, match.games);
                 
-                // Calculate total game wins from all games in the match
+                // Use actual game scores instead of just counting wins
+                // Sum up all scores for the user and opponent across all games
+                let userTotalScore = 0;
+                let opponentTotalScore = 0;
+                
+                match.games.forEach(game => {
+                  if (isPlayerA) {
+                    userTotalScore += game.scoreA;
+                    opponentTotalScore += game.scoreB;
+                  } else {
+                    userTotalScore += game.scoreB;
+                    opponentTotalScore += game.scoreA;
+                  }
+                });
+                
+                // Also keep track of game wins for status determination
                 const userWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
                 ).length;
@@ -56,6 +70,7 @@ const MatchHistory = () => {
                   (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
                 ).length;
                 
+                console.log(`User total score: ${userTotalScore}, Opponent total score: ${opponentTotalScore}`);
                 console.log(`User wins: ${userWins}, Opponent wins: ${opponentWins}`);
                 
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
@@ -69,7 +84,7 @@ const MatchHistory = () => {
                     <TableCell>{gameTypes}</TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>
-                        {userWins} - {opponentWins}
+                        {userTotalScore} - {opponentTotalScore}
                       </span>
                       {match.games.some(g => g.breakAndRun) && (
                         <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
