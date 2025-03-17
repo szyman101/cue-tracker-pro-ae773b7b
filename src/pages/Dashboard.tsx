@@ -9,9 +9,11 @@ import MatchHistory from "@/components/dashboard/MatchHistory";
 import SeasonHistory from "@/components/dashboard/SeasonHistory";
 import AdminControls from "@/components/dashboard/AdminControls";
 import UserControls from "@/components/dashboard/UserControls";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Dashboard = () => {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, logout } = useAuth();
   const { 
     getUserMatches, 
     getUserSeasons, 
@@ -39,11 +41,17 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold">
           Witaj, {currentUser?.nick} {isAdmin && "(Administrator)"}
         </h1>
-        {isAdmin ? (
-          <AdminControls clearMatchesAndSeasons={clearMatchesAndSeasons} />
-        ) : (
-          <UserControls />
-        )}
+        <div className="flex gap-4">
+          {isAdmin ? (
+            <AdminControls clearMatchesAndSeasons={clearMatchesAndSeasons} />
+          ) : (
+            <UserControls />
+          )}
+          <Button variant="outline" onClick={logout} className="ml-2">
+            <LogOut className="w-4 h-4 mr-2" />
+            Wyloguj
+          </Button>
+        </div>
       </div>
 
       <StatsCards 
