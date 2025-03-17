@@ -42,13 +42,18 @@ const MatchHistory = () => {
               {sortedMatches.map((match) => {
                 const isPlayerA = match.playerA === currentUser?.id;
                 const opponentId = isPlayerA ? match.playerB : match.playerA;
+                
+                // Use the saved player names from the match object
                 const opponentName = isPlayerA 
-                  ? match.playerBName || getUserById(opponentId)?.nick || "Nieznany przeciwnik"
-                  : match.playerAName || getUserById(opponentId)?.nick || "Nieznany przeciwnik";
+                  ? (match.playerBName || "Nieznany przeciwnik")
+                  : (match.playerAName || "Nieznany przeciwnik");
+                
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
                 
-                console.log(`Match ${match.id} games:`, match.games);
-                console.log(`Opponent name:`, opponentName);
+                console.log(`Match ${match.id}:`, match);
+                console.log(`Player A name: ${match.playerAName}, Player B name: ${match.playerBName}`);
+                console.log(`Is current user player A: ${isPlayerA}`);
+                console.log(`Opponent name being displayed: ${opponentName}`);
                 
                 // Count game wins (not score points) for proper display
                 const userWins = match.games.filter(g => 

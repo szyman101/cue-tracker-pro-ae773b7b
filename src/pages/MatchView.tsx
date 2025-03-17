@@ -63,14 +63,18 @@ const MatchView = () => {
     // Calculate elapsed time in seconds
     const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
     
+    // Make sure we have player names, defaulting to "Gracz A/B" if not available
+    const playerAName = playerA?.nick || 'Gracz A';
+    const playerBName = playerB?.nick || 'Gracz B';
+    
     // Create a completely new match object with all required data
     const completedMatch: Match = {
       id: match.id,
       date: match.date,
       playerA: match.playerA,
       playerB: match.playerB,
-      playerAName: playerA?.nick || 'Gracz A',
-      playerBName: playerB?.nick || 'Gracz B',
+      playerAName: playerAName,
+      playerBName: playerBName,
       games: finalGames, // Use the finalGames array which includes all finished games
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
