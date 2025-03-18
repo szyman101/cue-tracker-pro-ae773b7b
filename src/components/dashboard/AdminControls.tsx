@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, Users } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -29,6 +29,12 @@ const AdminControls: React.FC<AdminControlsProps> = ({ clearMatchesAndSeasons })
       </Button>
       <Button variant="outline" asChild>
         <Link to="/admin">Panel Admina</Link>
+      </Button>
+      <Button variant="outline" asChild>
+        <Link to="/register">
+          <Users className="w-4 h-4 mr-2" />
+          Dodaj nowego gracza
+        </Link>
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>

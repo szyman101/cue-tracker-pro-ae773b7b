@@ -2,9 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Match, Season, GameType } from "../types";
 import { initialUsers } from "../data/initialData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DataContextType {
-  users: User[];
   matches: Match[];
   seasons: Season[];
   getUserById: (id: string) => User | undefined;
@@ -12,12 +12,14 @@ interface DataContextType {
   getUserSeasons: (userId: string) => Season[];
   getSeasonMatches: (seasonId: string) => Match[];
   getActiveSeasons: () => Season[];
+  getUserWinsInSeason: (userId: string, seasonId: string) => number;
   addMatch: (match: Match) => void;
   addSeason: (season: Season) => void;
   updateSeasonWithMatch: (seasonId: string, matchId: string) => void;
   clearMatches: () => void;
   clearSeasons: () => void;
   deleteSeason: (seasonId: string) => void;
+  deleteMatch: (matchId: string) => void;
   endSeason: (seasonId: string, winnerId?: string) => void;
 }
 
@@ -38,7 +40,7 @@ const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
 };
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users] = useState<User[]>(initialUsers);
+  const { allUsers } = useAuth();
   const [matches, setMatches] = useState<Match[]>(loadFromStorage('matches', []));
   const [seasons, setSeasons] = useState<Season[]>(loadFromStorage('seasons', []));
 
@@ -52,7 +54,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [seasons]);
 
   const getUserById = (id: string) => {
-    return users.find(user => user.id === id);
+    return allUsers.find(user => user.id === id);
   };
 
   const getUserMatches = (userId: string) => {
@@ -71,6 +73,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getActiveSeasons = () => {
     return seasons.filter(season => season.active);
+  };
+
+  const getUserWinsInSeason = (userId: string, seasonId: string) => {
+    const seasonMatches = getSeasonMatches(seasonId);
+    return seasonMatches.filter(match => match.winner === userId).length;
   };
 
   const addMatch = (match: Match) => {
@@ -110,18 +117,53 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Clear all matches from the state and localStorage
   const clearMatches = () => {
     setMatches([]);
-    localStorage.removeItem('matches');
+    // Also update seasons to remove match references
+    setSeasons(prev => 
+      prev.map(season => ({
+        ...season,
+        matches: []
+      }))
+    );
   };
 
   // Clear all seasons from the state and localStorage
   const clearSeasons = () => {
     setSeasons([]);
-    localStorage.removeItem('seasons');
+    // Also update matches to remove season references
+    setMatches(prev => 
+      prev.map(match => ({
+        ...match,
+        seasonId: ""
+      }))
+    );
   };
   
   // Delete a specific season by ID
   const deleteSeason = (seasonId: string) => {
     setSeasons(prev => prev.filter(season => season.id !== seasonId));
+    
+    // Also update matches to remove the season reference
+    setMatches(prev => 
+      prev.map(match => 
+        match.seasonId === seasonId 
+          ? { ...match, seasonId: "" } 
+          : match
+      )
+    );
+  };
+  
+  // Delete a specific match by ID
+  const deleteMatch = (matchId: string) => {
+    // Remove the match
+    setMatches(prev => prev.filter(match => match.id !== matchId));
+    
+    // Also update seasons to remove the match reference
+    setSeasons(prev => 
+      prev.map(season => ({
+        ...season,
+        matches: season.matches.filter(id => id !== matchId)
+      }))
+    );
   };
   
   // End a season (mark as inactive)
@@ -144,7 +186,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider
       value={{
-        users,
         matches,
         seasons,
         getUserById,
@@ -152,12 +193,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getUserSeasons,
         getSeasonMatches,
         getActiveSeasons,
+        getUserWinsInSeason,
         addMatch,
         addSeason,
         updateSeasonWithMatch,
         clearMatches,
         clearSeasons,
         deleteSeason,
+        deleteMatch,
         endSeason
       }}
     >

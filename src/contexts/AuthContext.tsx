@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "../types";
 import { initialUsers } from "../data/initialData";
 import { toast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -10,6 +11,8 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  registerUser: (userData: Omit<User, "id">) => boolean;
+  allUsers: User[];
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -23,8 +26,17 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [users, setUsers] = useState<User[]>(() => {
+    const savedUsers = localStorage.getItem("users");
+    return savedUsers ? JSON.parse(savedUsers) : initialUsers;
+  });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Save users to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("users", JSON.stringify(users));
+  }, [users]);
 
   // Check if there's a saved user in localStorage on mount
   useEffect(() => {
@@ -32,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUser) {
       const user = JSON.parse(savedUser);
       // Make sure the user still exists in our data
-      if (initialUsers.some(u => u.id === user.id)) {
+      if (users.some(u => u.id === user.id)) {
         setCurrentUser(user);
         setIsAuthenticated(true);
       } else {
@@ -40,10 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem("currentUser");
       }
     }
-  }, []);
+  }, [users]);
 
   const login = (login: string, password: string): boolean => {
-    const user = initialUsers.find(
+    const user = users.find(
       (u) => u.login.toLowerCase() === login.toLowerCase() && u.password === password
     );
 
@@ -76,6 +88,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const registerUser = (userData: Omit<User, "id">): boolean => {
+    // Check if user with this login already exists
+    if (users.some(user => user.login.toLowerCase() === userData.login.toLowerCase())) {
+      toast({
+        title: "Błąd rejestracji",
+        description: "Użytkownik o podanym loginie już istnieje",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Create new user with ID
+    const newUser: User = {
+      ...userData,
+      id: uuidv4()
+    };
+
+    // Add to users array
+    setUsers(prev => [...prev, newUser]);
+
+    toast({
+      title: "Konto utworzone",
+      description: `Konto dla użytkownika ${newUser.nick} zostało utworzone. Możesz się teraz zalogować.`,
+    });
+    return true;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -83,7 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         isAuthenticated,
-        isAdmin: currentUser?.role === "admin"
+        isAdmin: currentUser?.role === "admin",
+        registerUser,
+        allUsers: users
       }}
     >
       {children}

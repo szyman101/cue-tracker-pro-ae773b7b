@@ -7,12 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, Eye, Link } from "lucide-react";
 import BackButton from "@/components/BackButton";
+import { Link as RouterLink } from "react-router-dom";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
-  const { getUserMatches, getUserById, seasons, clearMatches } = useData();
+  const { getUserMatches, getUserById, seasons, clearMatches, deleteMatch } = useData();
 
   const userMatches = currentUser ? getUserMatches(currentUser.id) : [];
   
@@ -21,13 +22,19 @@ const MatchHistory = () => {
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  console.log("Match history data:", sortedMatches);
-
   const handleClearHistory = () => {
     clearMatches();
     toast({
       title: "Historia wyczyszczona",
       description: "Wszystkie mecze zostały usunięte",
+    });
+  };
+
+  const handleDeleteMatch = (matchId: string) => {
+    deleteMatch(matchId);
+    toast({
+      title: "Mecz usunięty",
+      description: "Mecz został usunięty z historii",
     });
   };
 
@@ -51,6 +58,7 @@ const MatchHistory = () => {
                 <TableHead>Wynik</TableHead>
                 <TableHead>Sezon</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Akcje</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -59,15 +67,10 @@ const MatchHistory = () => {
                 const opponentId = isPlayerA ? match.playerB : match.playerA;
                 
                 const opponentName = isPlayerA 
-                  ? (match.playerBName || "Nieznany przeciwnik")
-                  : (match.playerAName || "Nieznany przeciwnik");
+                  ? (match.playerBName || getUserById(match.playerB)?.nick || "Nieznany przeciwnik")
+                  : (match.playerAName || getUserById(match.playerA)?.nick || "Nieznany przeciwnik");
                 
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
-                
-                console.log(`Match ${match.id}:`, match);
-                console.log(`Player A name: ${match.playerAName}, Player B name: ${match.playerBName}`);
-                console.log(`Is current user player A: ${isPlayerA}`);
-                console.log(`Opponent name being displayed: ${opponentName}`);
                 
                 // Calculate total scores from all games
                 let totalScoreA = 0;
@@ -86,8 +89,6 @@ const MatchHistory = () => {
                 const opponentWins = match.games.filter(g => 
                   (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
                 ).length;
-                
-                console.log(`User wins: ${userWins}, Opponent wins: ${opponentWins}`);
                 
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
@@ -112,7 +113,18 @@ const MatchHistory = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>{matchSeason?.name || "Towarzyski"}</TableCell>
+                    <TableCell>
+                      {matchSeason ? (
+                        <div className="flex items-center">
+                          <RouterLink to={`/season/${matchSeason.id}`} className="text-primary hover:underline flex items-center">
+                            {matchSeason.name}
+                            <Link className="h-3 w-3 ml-1" />
+                          </RouterLink>
+                        </div>
+                      ) : (
+                        "Towarzyski"
+                      )}
+                    </TableCell>
                     <TableCell>
                       {isWinner ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
@@ -128,12 +140,42 @@ const MatchHistory = () => {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="ghost" asChild>
+                          <RouterLink to={`/match/${match.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </RouterLink>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Czy na pewno chcesz usunąć ten mecz?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Ta akcja usunie mecz z historii i nie można jej cofnąć.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteMatch(match.id)}>
+                                Usuń mecz
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
               {sortedMatches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Brak historii meczów
                   </TableCell>
                 </TableRow>

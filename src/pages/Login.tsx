@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,15 @@ const Login = () => {
               Zaloguj się
             </Button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nie masz konta?{" "}
+              <Link to="/register" className="text-primary font-medium hover:underline">
+                Zarejestruj się
+              </Link>
+            </p>
+          </div>
           
           <div className="mt-6">
             <Button 
