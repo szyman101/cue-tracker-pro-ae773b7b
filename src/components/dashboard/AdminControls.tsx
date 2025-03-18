@@ -4,13 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/contexts/DataContext';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Database } from 'lucide-react';
-import MigrationButton from './MigrationButton';
 
 const AdminControls: React.FC = () => {
-  const { clearMatches, clearSeasons, isUsingSupabase, toggleDataSource, syncWithSupabase } = useData();
+  const { clearMatches, clearSeasons } = useData();
 
   return (
     <Card className="mb-6">
@@ -19,36 +16,15 @@ const AdminControls: React.FC = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Przełącznik źródła danych */}
-        <div className="space-y-6 border-b pb-6">
+        {/* Informacja o przechowywaniu danych */}
+        <div className="space-y-4 mb-4">
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5" />
             <h3 className="text-lg font-semibold">Źródło danych</h3>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="data-source" 
-              checked={isUsingSupabase}
-              onCheckedChange={toggleDataSource}
-            />
-            <Label htmlFor="data-source">
-              {isUsingSupabase ? 'Supabase (online)' : 'IndexedDB (lokalne)'}
-            </Label>
+          <div className="text-sm text-muted-foreground">
+            Wszystkie dane są przechowywane lokalnie w przeglądarce za pomocą IndexedDB.
           </div>
-          
-          <Button 
-            variant="outline" 
-            onClick={syncWithSupabase}
-            className="w-full"
-          >
-            Synchronizuj dane z Supabase
-          </Button>
-        </div>
-        
-        {/* Migracja danych */}
-        <div className="space-y-4 border-b pb-6">
-          <MigrationButton />
         </div>
         
         {/* Czyszczenie danych */}

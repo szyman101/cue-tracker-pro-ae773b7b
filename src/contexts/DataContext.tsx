@@ -1,513 +1,389 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { User, Match, Season } from "../types";
-import { initialUsers } from "../data/initialData";
-import * as db from "../utils/db";
-import * as supabaseUtils from "../utils/supabase";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { deleteMatchFromSupabase } from "@/utils/supabase/matches";
 
-interface DataContextType {
-  users: User[];
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Match, Season, User } from '@/types';
+import * as db from '@/utils/db';
+import { toast } from '@/hooks/use-toast';
+
+type DataContextType = {
   matches: Match[];
   seasons: Season[];
-  getUserById: (id: string) => User | undefined;
-  getUserMatches: (userId: string) => Match[];
-  getUserSeasons: (userId: string) => Season[];
-  getSeasonMatches: (seasonId: string) => Match[];
-  getActiveSeasons: () => Season[];
-  addMatch: (match: Match) => void;
-  addSeason: (season: Season) => void;
-  updateSeasonWithMatch: (seasonId: string, matchId: string) => void;
-  clearMatches: () => void;
-  clearSeasons: () => void;
-  deleteSeason: (seasonId: string) => void;
-  endSeason: (seasonId: string, winnerId?: string) => void;
-  isUsingSupabase: boolean;
-  toggleDataSource: () => void;
-  syncWithSupabase: () => Promise<void>;
+  users: User[];
+  addMatch: (match: Match) => Promise<void>;
   deleteMatch: (matchId: string) => Promise<void>;
-}
-
-const DataContext = createContext<DataContextType | null>(null);
-
-export const useData = () => {
-  const context = useContext(DataContext);
-  if (!context) {
-    throw new Error("useData must be used within a DataProvider");
-  }
-  return context;
+  clearMatches: () => Promise<void>;
+  addSeason: (season: Season) => Promise<void>;
+  deleteSeason: (seasonId: string) => Promise<void>;
+  endSeason: (seasonId: string) => Promise<void>;
+  clearSeasons: () => Promise<void>;
+  updateSeasonWithMatch: (seasonId: string, matchId: string) => Promise<void>;
+  getUserMatches: (userId: string) => Match[];
+  getUserById: (userId?: string) => User | undefined;
+  getActiveSeasons: () => Season[];
 };
 
+const DataContext = createContext<DataContextType | undefined>(undefined);
+
+// Sample users for the demo
+const initialUsers: User[] = [
+  { id: '1', nick: 'Gracz 1', role: 'admin' },
+  { id: '2', nick: 'Gracz 2', role: 'player' },
+  { id: '3', nick: 'Gracz 3', role: 'player' },
+];
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users] = useState<User[]>(initialUsers);
   const [matches, setMatches] = useState<Match[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUsingSupabase, setIsUsingSupabase] = useState(true);
+  const [users] = useState<User[]>(initialUsers);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const syncWithSupabase = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      const supabaseMatches = await supabaseUtils.fetchMatchesFromSupabase();
-      const supabaseSeasons = await supabaseUtils.fetchSeasonsFromSupabase();
-      const seasonMatches = await supabaseUtils.fetchSeasonMatches();
-      
-      const enhancedSeasons = supabaseSeasons.map(season => {
-        const matches = seasonMatches
-          .filter(rel => rel.seasonId === season.id)
-          .map(rel => rel.matchId);
-        
-        return {
-          ...season,
-          matches
-        };
-      });
-      
-      setMatches(supabaseMatches);
-      setSeasons(enhancedSeasons);
-      
-      console.log("Dane zsynchronizowane z Supabase:", {
-        matches: supabaseMatches.length,
-        seasons: enhancedSeasons.length
-      });
-      
-      toast({
-        title: "Dane zaktualizowane",
-        description: "Dane zostały pomyślnie zsynchronizowane z Supabase.",
-        duration: 3000
-      });
-    } catch (error) {
-      console.error("Błąd podczas synchronizacji z Supabase:", error);
-      toast({
-        title: "Błąd synchronizacji",
-        description: "Nie udało się zsynchronizować danych z Supabase.",
-        variant: "destructive",
-        duration: 5000
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // Initialize database and load data
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        await db.initDB();
+        await loadAllData();
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing database:", error);
+        toast({
+          title: "Błąd inicjalizacji",
+          description: "Nie udało się załadować danych. Spróbuj odświeżyć stronę.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    initializeData();
   }, []);
 
-  useEffect(() => {
-    if (!isUsingSupabase) return;
-    
-    const matchesChannel = supabase
-      .channel('public:matches')
-      .on('postgres_changes', {
-        event: '*', 
-        schema: 'public', 
-        table: 'matches'
-      }, (payload) => {
-        console.log('Zmiana w tabeli matches:', payload);
-        syncWithSupabase();
-      })
-      .subscribe();
-      
-    const seasonsChannel = supabase
-      .channel('public:seasons')
-      .on('postgres_changes', {
-        event: '*', 
-        schema: 'public', 
-        table: 'seasons'
-      }, (payload) => {
-        console.log('Zmiana w tabeli seasons:', payload);
-        syncWithSupabase();
-      })
-      .subscribe();
-      
-    const seasonMatchesChannel = supabase
-      .channel('public:season_matches')
-      .on('postgres_changes', {
-        event: '*', 
-        schema: 'public', 
-        table: 'season_matches'
-      }, (payload) => {
-        console.log('Zmiana w tabeli season_matches:', payload);
-        syncWithSupabase();
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(matchesChannel);
-      supabase.removeChannel(seasonsChannel);
-      supabase.removeChannel(seasonMatchesChannel);
-    };
-  }, [isUsingSupabase, syncWithSupabase]);
-
-  const toggleDataSource = () => {
-    setIsUsingSupabase(!isUsingSupabase);
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (isUsingSupabase) {
-          await syncWithSupabase();
-        } else {
-          await db.initDB();
-          
-          const loadedMatches = await db.getMatches();
-          const loadedSeasons = await db.getSeasons();
-          
-          console.log("Loaded matches from IndexedDB:", loadedMatches);
-          console.log("Loaded seasons from IndexedDB:", loadedSeasons);
-          
-          setMatches(Array.isArray(loadedMatches) ? loadedMatches : []);
-          setSeasons(Array.isArray(loadedSeasons) ? loadedSeasons : []);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        setMatches([]);
-        setSeasons([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [isUsingSupabase, syncWithSupabase]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    
-    const saveMatches = async () => {
-      try {
-        if (Array.isArray(matches)) {
-          if (isUsingSupabase) {
-            console.log("Używanie Supabase jako źródła danych - mecze zapisywane przy dodawaniu");
-          } else {
-            for (const match of matches) {
-              await db.addMatch(match);
-            }
-            console.log("Mecze zapisane do IndexedDB:", matches.length);
-          }
-        }
-      } catch (error) {
-        console.error("Error saving matches:", error);
-      }
-    };
-
-    saveMatches();
-  }, [matches, isLoading, isUsingSupabase]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    
-    const saveSeasons = async () => {
-      try {
-        if (Array.isArray(seasons)) {
-          if (isUsingSupabase) {
-            console.log("Używanie Supabase jako źródła danych - sezony zapisywane przy dodawaniu");
-          } else {
-            for (const season of seasons) {
-              await db.addSeason(season);
-            }
-            console.log("Sezony zapisane do IndexedDB:", seasons.length);
-          }
-        }
-      } catch (error) {
-        console.error("Error saving seasons:", error);
-      }
-    };
-
-    saveSeasons();
-  }, [seasons, isLoading, isUsingSupabase]);
-
-  const getUserById = (id: string) => {
-    return users.find(user => user.id === id);
-  };
-
-  const getUserMatches = (userId: string) => {
-    return matches ? matches.filter(match => match.playerA === userId || match.playerB === userId) : [];
-  };
-
-  const getUserSeasons = (userId: string) => {
-    if (!matches || !seasons) return [];
-    const userMatches = getUserMatches(userId);
-    const seasonIds = Array.from(new Set(userMatches.map(match => match.seasonId).filter(Boolean)));
-    return seasons.filter(season => seasonIds.includes(season.id));
-  };
-
-  const getSeasonMatches = (seasonId: string) => {
-    return matches ? matches.filter(match => match.seasonId === seasonId) : [];
-  };
-
-  const getActiveSeasons = () => {
-    return seasons ? seasons.filter(season => season.active) : [];
-  };
-
-  const addMatch = async (match: Match) => {
-    setMatches(prev => {
-      if (!prev) return [match];
-      
-      const matchIndex = prev.findIndex(m => m.id === match.id);
-      if (matchIndex >= 0) {
-        const updatedMatches = [...prev];
-        updatedMatches[matchIndex] = match;
-        return updatedMatches;
-      } else {
-        return [...prev, match];
-      }
-    });
-    
+  // Load all matches and seasons from IndexedDB
+  const loadAllData = async () => {
     try {
-      if (isUsingSupabase) {
-        await supabaseUtils.saveMatchToSupabase(match);
-        console.log("Mecz zapisany do Supabase:", match.id);
-      } else {
-        await db.addMatch(match);
-        console.log("Mecz zapisany do IndexedDB:", match.id);
-      }
+      const loadedMatches = await db.getMatches();
+      const loadedSeasons = await db.getSeasons();
+      setMatches(loadedMatches);
+      setSeasons(loadedSeasons);
     } catch (error) {
-      console.error("Błąd podczas zapisywania meczu:", error);
+      console.error("Error loading data:", error);
       toast({
-        title: "Błąd zapisu",
-        description: "Nie udało się zapisać meczu. Spróbuj ponownie.",
+        title: "Błąd ładowania danych",
+        description: "Wystąpił problem podczas ładowania danych.",
         variant: "destructive"
       });
     }
   };
 
-  const addSeason = async (season: Season) => {
-    setSeasons(prev => prev ? [...prev, season] : [season]);
-    
+  // Add or update a match
+  const addMatch = async (match: Match): Promise<void> => {
     try {
-      if (isUsingSupabase) {
-        await supabaseUtils.saveSeasonToSupabase(season);
-        console.log("Sezon zapisany do Supabase:", season.id);
-      } else {
-        await db.addSeason(season);
-        console.log("Sezon zapisany do IndexedDB:", season.id);
-      }
+      await db.addMatch(match);
+      setMatches(prev => {
+        const filteredMatches = prev.filter(m => m.id !== match.id);
+        return [...filteredMatches, match];
+      });
+      toast({
+        title: "Mecz zapisany",
+        description: "Mecz został pomyślnie zapisany.",
+      });
     } catch (error) {
-      console.error("Błąd podczas zapisywania sezonu:", error);
+      console.error("Error saving match:", error);
       toast({
         title: "Błąd zapisu",
-        description: "Nie udało się zapisać sezonu. Spróbuj ponownie.",
+        description: "Nie udało się zapisać meczu.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
-  const updateSeasonWithMatch = async (seasonId: string, matchId: string) => {
-    setSeasons(prev => {
-      if (!prev) return prev;
-      
-      return prev.map(season => {
-        if (season.id === seasonId) {
-          if (!season.matches.includes(matchId)) {
-            return { ...season, matches: [...season.matches, matchId] };
-          }
+  // Delete a match
+  const deleteMatch = async (matchId: string): Promise<void> => {
+    try {
+      // Remove match from seasons if it's part of any
+      const updatedSeasons = seasons.map(season => {
+        if (season.matches.includes(matchId)) {
+          return {
+            ...season,
+            matches: season.matches.filter(id => id !== matchId)
+          };
         }
         return season;
       });
-    });
-    
-    try {
-      if (isUsingSupabase) {
-        await supabaseUtils.saveSeasonMatchRelation(seasonId, matchId);
-        console.log("Relacja sezon-mecz zapisana do Supabase:", { seasonId, matchId });
-      } else {
-        const updatedSeason = seasons.find(s => s.id === seasonId);
-        if (updatedSeason) {
-          await db.addSeason(updatedSeason);
+
+      // Update seasons in DB and state
+      for (const season of updatedSeasons) {
+        if (seasons.find(s => s.id === season.id)?.matches.includes(matchId)) {
+          await db.addSeason(season);
         }
       }
+      setSeasons(updatedSeasons);
+
+      // Delete the match
+      await db.deleteSeason(matchId);
+      setMatches(prev => prev.filter(match => match.id !== matchId));
+      
+      toast({
+        title: "Mecz usunięty",
+        description: "Mecz został pomyślnie usunięty.",
+      });
     } catch (error) {
-      console.error("Błąd podczas aktualizacji relacji sezon-mecz:", error);
+      console.error("Error deleting match:", error);
+      toast({
+        title: "Błąd usuwania",
+        description: "Nie udało się usunąć meczu.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Clear all matches
+  const clearMatches = async (): Promise<void> => {
+    try {
+      await db.clearMatches();
+      
+      // Update seasons to remove match references
+      const updatedSeasons = seasons.map(season => ({
+        ...season,
+        matches: []
+      }));
+      
+      // Update seasons in DB and state
+      for (const season of updatedSeasons) {
+        await db.addSeason(season);
+      }
+      
+      setSeasons(updatedSeasons);
+      setMatches([]);
+      
+      toast({
+        title: "Mecze wyczyszczone",
+        description: "Wszystkie mecze zostały usunięte.",
+      });
+    } catch (error) {
+      console.error("Error clearing matches:", error);
+      toast({
+        title: "Błąd czyszczenia",
+        description: "Nie udało się wyczyścić meczy.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Add or update a season
+  const addSeason = async (season: Season): Promise<void> => {
+    try {
+      await db.addSeason(season);
+      setSeasons(prev => {
+        const filteredSeasons = prev.filter(s => s.id !== season.id);
+        return [...filteredSeasons, season];
+      });
+      toast({
+        title: "Sezon zapisany",
+        description: "Sezon został pomyślnie zapisany.",
+      });
+    } catch (error) {
+      console.error("Error saving season:", error);
       toast({
         title: "Błąd zapisu",
-        description: "Nie udało się zaktualizować relacji sezon-mecz. Spróbuj ponownie.",
+        description: "Nie udało się zapisać sezonu.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
-  const clearMatches = async () => {
+  // Delete a season
+  const deleteSeason = async (seasonId: string): Promise<void> => {
     try {
-      if (isUsingSupabase) {
-        console.warn("Czyszczenie wszystkich meczy w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
-        toast({
-          title: "Operacja niemożliwa",
-          description: "Czyszczenie danych w Supabase jest zablokowane ze względów bezpieczeństwa.",
-          variant: "destructive"
-        });
-      } else {
-        await db.clearMatches();
-        setMatches([]);
-        toast({
-          title: "Dane wyczyszczone",
-          description: "Wszystkie mecze zostały usunięte.",
-        });
-      }
-    } catch (error) {
-      console.error("Błąd podczas czyszczenia meczy:", error);
-      toast({
-        title: "Błąd",
-        description: "Nie udało się wyczyścić danych meczy.",
-        variant: "destructive"
+      await db.deleteSeason(seasonId);
+      setSeasons(prev => prev.filter(season => season.id !== seasonId));
+      
+      // Update matches to remove season reference
+      const updatedMatches = matches.map(match => {
+        if (match.seasonId === seasonId) {
+          return {
+            ...match,
+            seasonId: undefined
+          };
+        }
+        return match;
       });
-    }
-  };
-
-  const clearSeasons = async () => {
-    try {
-      if (isUsingSupabase) {
-        console.warn("Czyszczenie wszystkich sezonów w Supabase nie jest zaimplementowane ze względów bezpieczeństwa");
-        toast({
-          title: "Operacja niemożliwa",
-          description: "Czyszczenie danych w Supabase jest zablokowane ze względów bezpieczeństwa.",
-          variant: "destructive"
-        });
-      } else {
-        await db.clearSeasons();
-        setSeasons([]);
-        toast({
-          title: "Dane wyczyszczone",
-          description: "Wszystkie sezony zostały usunięte.",
-        });
+      
+      // Update matches in DB and state
+      for (const match of updatedMatches) {
+        if (matches.find(m => m.id === match.id)?.seasonId === seasonId) {
+          await db.addMatch(match);
+        }
       }
-    } catch (error) {
-      console.error("Błąd podczas czyszczenia sezonów:", error);
+      setMatches(updatedMatches);
+      
       toast({
-        title: "Błąd",
-        description: "Nie udało się wyczyścić danych sezonów.",
-        variant: "destructive"
+        title: "Sezon usunięty",
+        description: "Sezon został pomyślnie usunięty.",
       });
-    }
-  };
-
-  const deleteSeason = async (seasonId: string) => {
-    try {
-      if (isUsingSupabase) {
-        console.warn("Usuwanie sezonu w Supabase nie jest jeszcze zaimplementowane");
-        toast({
-          title: "Operacja niemożliwa",
-          description: "Usuwanie sezonów w Supabase jest obecnie niedostępne.",
-          variant: "destructive"
-        });
-      } else {
-        await db.deleteSeason(seasonId);
-        setSeasons(prev => prev ? prev.filter(season => season.id !== seasonId) : []);
-        toast({
-          title: "Sezon usunięty",
-          description: "Sezon został pomyślnie usunięty.",
-        });
-      }
     } catch (error) {
-      console.error("Błąd podczas usuwania sezonu:", error);
+      console.error("Error deleting season:", error);
       toast({
-        title: "Błąd",
+        title: "Błąd usuwania",
         description: "Nie udało się usunąć sezonu.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
-  const endSeason = async (seasonId: string, winnerId?: string) => {
-    setSeasons(prev => {
-      if (!prev) return prev;
-      
-      return prev.map(season => {
-        if (season.id === seasonId) {
-          const updatedSeason = { 
-            ...season, 
-            active: false,
-            endDate: new Date().toISOString(),
-            winner: winnerId || season.winner
-          };
-          
-          try {
-            if (isUsingSupabase) {
-              supabaseUtils.saveSeasonToSupabase(updatedSeason).catch(error => {
-                console.error("Błąd podczas zakończenia sezonu w Supabase:", error);
-                toast({
-                  title: "Błąd",
-                  description: "Nie uda��o się zakończyć sezonu. Spróbuj ponownie.",
-                  variant: "destructive"
-                });
-              });
-            } else {
-              db.addSeason(updatedSeason);
-            }
-          } catch (error) {
-            console.error("Błąd podczas zakończenia sezonu:", error);
-          }
-          
-          return updatedSeason;
-        }
-        return season;
-      });
-    });
-  };
-
-  const deleteMatch = async (matchId: string) => {
+  // End a season (mark as inactive)
+  const endSeason = async (seasonId: string): Promise<void> => {
     try {
-      if (isUsingSupabase) {
-        await deleteMatchFromSupabase(matchId);
-        setMatches(prev => prev ? prev.filter(match => match.id !== matchId) : []);
-        toast({
-          title: "Mecz usunięty",
-          description: "Mecz został pomyślnie usunięty z historii.",
-        });
-      } else {
-        setMatches(prev => prev ? prev.filter(match => match.id !== matchId) : []);
-        setSeasons(prev => {
-          if (!prev) return prev;
-          return prev.map(season => ({
-            ...season,
-            matches: season.matches.filter(id => id !== matchId)
-          }));
-        });
-        toast({
-          title: "Mecz usunięty",
-          description: "Mecz został pomyślnie usunięty z historii.",
-        });
+      const season = seasons.find(s => s.id === seasonId);
+      if (!season) {
+        throw new Error("Sezon nie istnieje");
       }
-    } catch (error) {
-      console.error("Błąd podczas usuwania meczu:", error);
+      
+      const updatedSeason = {
+        ...season,
+        active: false,
+        endDate: new Date().toISOString()
+      };
+      
+      await db.addSeason(updatedSeason);
+      setSeasons(prev => prev.map(s => 
+        s.id === seasonId ? updatedSeason : s
+      ));
+      
       toast({
-        title: "Błąd",
-        description: "Nie udało się usunąć meczu. Spróbuj ponownie.",
+        title: "Sezon zakończony",
+        description: "Sezon został pomyślnie zakończony.",
+      });
+    } catch (error) {
+      console.error("Error ending season:", error);
+      toast({
+        title: "Błąd kończenia sezonu",
+        description: "Nie udało się zakończyć sezonu.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
-  if (isLoading) {
-    return <div>Loading data...</div>;
-  }
+  // Clear all seasons
+  const clearSeasons = async (): Promise<void> => {
+    try {
+      await db.clearSeasons();
+      
+      // Update matches to remove season references
+      const updatedMatches = matches.map(match => ({
+        ...match,
+        seasonId: undefined
+      }));
+      
+      // Update matches in DB and state
+      for (const match of updatedMatches) {
+        if (matches.find(m => m.id === match.id)?.seasonId) {
+          await db.addMatch(match);
+        }
+      }
+      
+      setMatches(updatedMatches);
+      setSeasons([]);
+      
+      toast({
+        title: "Sezony wyczyszczone",
+        description: "Wszystkie sezony zostały usunięte.",
+      });
+    } catch (error) {
+      console.error("Error clearing seasons:", error);
+      toast({
+        title: "Błąd czyszczenia",
+        description: "Nie udało się wyczyścić sezonów.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Add a match to a season
+  const updateSeasonWithMatch = async (seasonId: string, matchId: string): Promise<void> => {
+    try {
+      const season = seasons.find(s => s.id === seasonId);
+      if (!season) {
+        throw new Error("Sezon nie istnieje");
+      }
+      
+      if (season.matches.includes(matchId)) {
+        return; // Match already in season
+      }
+      
+      const updatedSeason = {
+        ...season,
+        matches: [...season.matches, matchId]
+      };
+      
+      await db.addSeason(updatedSeason);
+      setSeasons(prev => prev.map(s => 
+        s.id === seasonId ? updatedSeason : s
+      ));
+    } catch (error) {
+      console.error("Error updating season with match:", error);
+      toast({
+        title: "Błąd aktualizacji",
+        description: "Nie udało się zaktualizować sezonu o mecz.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Get all matches for a user
+  const getUserMatches = (userId: string): Match[] => {
+    return matches.filter(match => 
+      match.playerA === userId || match.playerB === userId
+    ).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  };
+
+  // Get user by ID
+  const getUserById = (userId?: string): User | undefined => {
+    if (!userId) return undefined;
+    return users.find(user => user.id === userId);
+  };
+
+  // Get active seasons
+  const getActiveSeasons = (): Season[] => {
+    return seasons.filter(season => season.active);
+  };
 
   return (
     <DataContext.Provider
       value={{
-        users,
         matches,
         seasons,
-        getUserById,
-        getUserMatches,
-        getUserSeasons,
-        getSeasonMatches,
-        getActiveSeasons,
+        users,
         addMatch,
-        addSeason,
-        updateSeasonWithMatch,
+        deleteMatch,
         clearMatches,
-        clearSeasons,
+        addSeason,
         deleteSeason,
         endSeason,
-        isUsingSupabase,
-        toggleDataSource,
-        syncWithSupabase,
-        deleteMatch
+        clearSeasons,
+        updateSeasonWithMatch,
+        getUserMatches,
+        getUserById,
+        getActiveSeasons,
       }}
     >
       {children}
     </DataContext.Provider>
   );
+};
+
+export const useData = (): DataContextType => {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
 };
