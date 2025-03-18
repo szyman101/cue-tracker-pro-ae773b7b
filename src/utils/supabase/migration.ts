@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import * as db from "../db";
 import { saveMatchToSupabase } from './matches';
-import { saveSeasonToSupabase } from './seasons';
+import { saveSeasonToSupabase } from './seasons/update';  // Update the import path
 
 // Migrate all data from IndexedDB to Supabase
 export const migrateDataToSupabase = async (): Promise<{
