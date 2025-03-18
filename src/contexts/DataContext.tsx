@@ -17,6 +17,7 @@ type DataContextType = {
   clearSeasons: () => Promise<void>;
   updateSeasonWithMatch: (seasonId: string, matchId: string) => Promise<void>;
   getUserMatches: (userId: string) => Match[];
+  getUserSeasons: (userId: string) => Season[];
   getUserById: (userId?: string) => User | undefined;
   getActiveSeasons: () => Season[];
 };
@@ -25,9 +26,9 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Sample users for the demo
 const initialUsers: User[] = [
-  { id: '1', nick: 'Gracz 1', role: 'admin' },
-  { id: '2', nick: 'Gracz 2', role: 'player' },
-  { id: '3', nick: 'Gracz 3', role: 'player' },
+  { id: '1', nick: 'Gracz 1', firstName: 'Admin', login: 'admin', password: 'admin', role: 'admin' },
+  { id: '2', nick: 'Gracz 2', firstName: 'Player One', login: 'player1', password: 'player1', role: 'player' },
+  { id: '3', nick: 'Gracz 3', firstName: 'Player Two', login: 'player2', password: 'player2', role: 'player' },
 ];
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -345,6 +346,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  // Get all seasons for a user
+  const getUserSeasons = (userId: string): Season[] => {
+    // Get all match IDs for this user
+    const userMatchIds = getUserMatches(userId).map(match => match.id);
+    
+    // Return seasons that contain any of those match IDs
+    return seasons.filter(season => 
+      season.matches.some(matchId => userMatchIds.includes(matchId))
+    );
+  };
+
   // Get user by ID
   const getUserById = (userId?: string): User | undefined => {
     if (!userId) return undefined;
@@ -371,6 +383,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearSeasons,
         updateSeasonWithMatch,
         getUserMatches,
+        getUserSeasons,
         getUserById,
         getActiveSeasons,
       }}
