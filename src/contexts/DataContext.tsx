@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Match, Season, User } from '@/types';
 import * as db from '@/utils/db';
@@ -20,14 +19,15 @@ type DataContextType = {
   getUserSeasons: (userId: string) => Season[];
   getUserById: (userId?: string) => User | undefined;
   getActiveSeasons: () => Season[];
+  getUserWinsInSeason: (userId: string, seasonId: string) => number;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Sample users for the demo
+// Sample users for the demo with updated names
 const initialUsers: User[] = [
-  { id: '1', nick: 'Gracz 1', firstName: 'Admin', login: 'admin', password: 'admin', role: 'admin' },
-  { id: '2', nick: 'Gracz 2', firstName: 'Player One', login: 'player1', password: 'player1', role: 'player' },
+  { id: '1', nick: 'Szyman', firstName: 'Szymon', login: 'admin', password: 'admin', role: 'admin' },
+  { id: '2', nick: 'Kimoz', firstName: 'Kamil', login: 'player1', password: 'player1', role: 'player' },
   { id: '3', nick: 'Gracz 3', firstName: 'Player Two', login: 'player2', password: 'player2', role: 'player' },
 ];
 
@@ -368,6 +368,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return seasons.filter(season => season.active);
   };
 
+  // Add a new function to get user wins in a specific season
+  const getUserWinsInSeason = (userId: string, seasonId: string): number => {
+    // Get all matches in this season
+    const seasonMatches = matches.filter(match => match.seasonId === seasonId);
+    
+    // Count how many matches the user has won in this season
+    return seasonMatches.filter(match => match.winner === userId).length;
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -386,6 +395,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getUserSeasons,
         getUserById,
         getActiveSeasons,
+        getUserWinsInSeason,
       }}
     >
       {children}

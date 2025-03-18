@@ -72,7 +72,9 @@ const ScoreCounter: React.FC<ScoreCounterProps> = ({
       
       <div className="text-center mt-2">
         <div className="text-lg font-semibold">Wygrane: {wins}</div>
-        <div className="text-sm text-muted-foreground">z {gamesToWin} potrzebnych</div>
+        <div className="text-sm text-muted-foreground">
+          z {gamesToWin} potrzebnych
+        </div>
       </div>
     </div>
   );

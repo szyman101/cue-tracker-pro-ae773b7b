@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, Calendar, Trophy } from "lucide-react";
 import { Match, Season, User } from "@/types";
+import { useData } from "@/contexts/DataContext";
 
 interface StatsCardsProps {
   totalMatchesPlayed: number;
@@ -23,6 +24,18 @@ const StatsCards: React.FC<StatsCardsProps> = ({
   currentUser,
   title
 }) => {
+  const { getUserWinsInSeason } = useData();
+  
+  // Get the first active season if there is one
+  const firstActiveSeason = activeSeasons.length > 0 ? activeSeasons[0] : null;
+  
+  // Calculate wins in current season if there is an active season and a user
+  const winsInCurrentSeason = 
+    firstActiveSeason && currentUser ? 
+    getUserWinsInSeason(currentUser.id, firstActiveSeason.id) : 0;
+  
+  const neededWins = firstActiveSeason?.matchesToWin || 0;
+
   return (
     <div className="space-y-2">
       {title && (
@@ -51,6 +64,14 @@ const StatsCards: React.FC<StatsCardsProps> = ({
             <p className="text-xs text-muted-foreground">
               Wszystkich sezonów: {userSeasons.length}
             </p>
+            {firstActiveSeason && (
+              <div className="mt-2 p-2 bg-muted rounded-md">
+                <p className="text-sm font-medium">Wygrane: {winsInCurrentSeason}</p>
+                <p className="text-xs text-muted-foreground">
+                  z {neededWins} potrzebnych
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>

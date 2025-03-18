@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
@@ -19,7 +20,7 @@ const Dashboard = () => {
   const { 
     getUserMatches, 
     getUserSeasons, 
-    getActiveSeasons, 
+    getActiveSeasons,
     clearSeasons, 
     clearMatches
   } = useData();
