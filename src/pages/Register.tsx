@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { User, KeyRound, AtSign, UserCircle } from "lucide-react";
 import Logo from "@/components/Logo";
+import { UserRole } from "@/types";
 import { 
   Select,
   SelectContent,
@@ -22,7 +22,7 @@ const Register = () => {
     nick: "",
     login: "",
     password: "",
-    role: "player"
+    role: "player" as UserRole
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const { registerUser } = useAuth();
@@ -52,7 +52,7 @@ const Register = () => {
   const handleRoleChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      role: value as "player" | "admin"
+      role: value as UserRole
     }));
   };
 

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface DataContextType {
   matches: Match[];
   seasons: Season[];
+  users: User[]; // Add users property
   getUserById: (id: string) => User | undefined;
   getUserMatches: (userId: string) => Match[];
   getUserSeasons: (userId: string) => Season[];
@@ -188,6 +189,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         matches,
         seasons,
+        users: allUsers, // Expose the users from AuthContext
         getUserById,
         getUserMatches,
         getUserSeasons,

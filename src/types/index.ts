@@ -49,4 +49,5 @@ export interface Season {
   winner?: string; // user id
   gamesPerMatch?: number; // Changed from matchesPerGame to gamesPerMatch to match usage in data
   stake?: number; // Adding stake field which is used in initialData
+  description?: string; // Adding description field
 }
