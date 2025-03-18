@@ -18,9 +18,9 @@ const SeasonManagement: React.FC<SeasonManagementProps> = ({ activeSeasons }) =>
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
   const { deleteSeason, endSeason } = useData();
   
-  const handleDeleteSeason = async () => {
+  const handleDeleteSeason = () => {
     if (selectedSeasonId) {
-      await deleteSeason(selectedSeasonId);
+      deleteSeason(selectedSeasonId);
       setSelectedSeasonId("");
       toast({
         title: "Sezon usunięty",
@@ -35,9 +35,9 @@ const SeasonManagement: React.FC<SeasonManagementProps> = ({ activeSeasons }) =>
     }
   };
 
-  const handleEndSeason = async () => {
+  const handleEndSeason = () => {
     if (selectedSeasonId) {
-      await endSeason(selectedSeasonId);
+      endSeason(selectedSeasonId);
       setSelectedSeasonId("");
       toast({
         title: "Sezon zakończony",

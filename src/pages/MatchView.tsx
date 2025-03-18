@@ -40,7 +40,7 @@ const MatchView = () => {
   const activeSeasons = getActiveSeasons();
   const activeSeason = match?.seasonId ? activeSeasons.find(s => s.id === match.seasonId) : null;
 
-  const endMatch = async () => {
+  const endMatch = () => {
     // First, finish the current game if there's a score
     let finalGames = [...games];
     if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
@@ -85,31 +85,22 @@ const MatchView = () => {
     
     console.log('Saving match with player names:', completedMatch);
     
-    try {
-      // Save the match to the data store first and wait for it to complete
-      await addMatch(completedMatch);
-      
-      // If this match is part of a season, update the season after match is saved
-      if (typeof match.seasonId === 'string' && match.seasonId) {
-        await updateSeasonWithMatch(match.seasonId, match.id);
-      }
-      
-      toast({
-        title: "Mecz zakończony",
-        description: matchWinner === 'tie' 
-          ? "Mecz zakończył się remisem" 
-          : `Wygrał ${getUserById(matchWinner)?.nick}`,
-      });
-      
-      navigate('/dashboard');
-    } catch (error) {
-      console.error("Error saving match:", error);
-      toast({
-        title: "Błąd",
-        description: "Wystąpił problem podczas zapisywania meczu. Spróbuj ponownie.",
-        variant: "destructive",
-      });
+    // Save the match to the data store
+    addMatch(completedMatch);
+    
+    // If this match is part of a season, update the season
+    if (typeof match.seasonId === 'string' && match.seasonId) {
+      updateSeasonWithMatch(match.seasonId, match.id);
     }
+    
+    toast({
+      title: "Mecz zakończony",
+      description: matchWinner === 'tie' 
+        ? "Mecz zakończył się remisem" 
+        : `Wygrał ${getUserById(matchWinner)?.nick}`,
+    });
+    
+    navigate('/dashboard');
   };
 
   const handleFinishGame = (winner: 'A' | 'B') => {
