@@ -10,7 +10,7 @@ import { GameType, Match } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
-import { CueBall } from 'lucide-react';
+import { Circle } from 'lucide-react';
 
 const NewMatch = () => {
   const navigate = useNavigate();
@@ -58,7 +58,8 @@ const NewMatch = () => {
     // Add match to data context
     addMatch(newMatch);
     
-    // Navigate to match page
+    // Navigate to match page with view=play parameter to show scoreboard
+    // Here's the critical fix - making sure to add the view=play parameter
     navigate(`/match/${newMatch.id}?view=play`);
   };
 
@@ -67,7 +68,7 @@ const NewMatch = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <CueBall className="h-6 w-6 mr-2 text-primary" aria-label="New Match" />
+            <Circle className="h-6 w-6 mr-2 text-primary" aria-label="New Match" />
             Nowy mecz
           </CardTitle>
         </CardHeader>

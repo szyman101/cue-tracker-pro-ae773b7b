@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
@@ -6,7 +7,7 @@ import GameHistory from '@/components/match/GameHistory';
 import Scoreboard from '@/components/match/Scoreboard';
 import BackButton from '@/components/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Trophy, Zap, Circle, CueBall } from 'lucide-react';
+import { Clock, Trophy, Zap, Circle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useMatchState } from '@/hooks/use-match-state';
 import { toast } from '@/hooks/use-toast';
@@ -77,7 +78,7 @@ const MatchView = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <CueBall className="h-6 w-6 text-primary" aria-label="Match details" />
+            <Circle className="h-6 w-6 text-primary" aria-label="Match details" />
             Szczegóły meczu
           </CardTitle>
         </CardHeader>
