@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleDot, Flag, Plus, Minus } from 'lucide-react';
+import { Minus, Plus, Zap } from 'lucide-react';
 
 interface ScoreCounterProps {
   playerName: string;
@@ -10,6 +10,8 @@ interface ScoreCounterProps {
   wins: number;
   gamesToWin: number;
   breakRuns: number;
+  seasonPoints?: number;
+  seasonPointsToWin?: number;
   onScoreChange: (increment: boolean) => void;
   onBreakAndRun: () => void;
 }
@@ -21,59 +23,60 @@ const ScoreCounter: React.FC<ScoreCounterProps> = ({
   wins,
   gamesToWin,
   breakRuns,
+  seasonPoints,
+  seasonPointsToWin,
   onScoreChange,
   onBreakAndRun
 }) => {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col items-center">
-        <h2 className="text-3xl font-bold text-center mb-1 flex items-center justify-center">
-          {playerName} 
-          {isBreak && (
-            <div className="ml-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full flex items-center">
-              <Flag className="w-3 h-3 mr-1" /> 
-              ROZBIJA
-            </div>
-          )}
-        </h2>
-        <div className="text-sm mb-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs p-1 h-6"
-            onClick={onBreakAndRun}
-          >
-            <CircleDot className="w-4 h-4 mr-1" /> 
-            <span>Zejście z kija ({breakRuns})</span>
-          </Button>
+    <div className={`p-4 rounded-lg border-2 ${isBreak ? 'border-primary' : 'border-gray-200 dark:border-gray-800'}`}>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-bold flex items-center">
+          {playerName}
+          {isBreak && <span className="ml-2 text-primary font-bold">(Break)</span>}
+        </h3>
+        <div className="text-sm">
+          Wygrane: {wins} z {gamesToWin}
         </div>
       </div>
-      
-      <div className="text-9xl font-bold text-center my-4">
-        {score}
-      </div>
-      
-      <div className="flex gap-2 justify-center">
-        <Button
-          variant="secondary"
-          size="lg"
+
+      <div className="text-6xl font-bold text-center py-4">{score}</div>
+
+      <div className="flex justify-between items-center">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={() => onScoreChange(false)}
+          disabled={score === 0}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        
+        <div className="text-sm">
+          {seasonPoints !== undefined && seasonPointsToWin ? (
+            <span>Wygrane mecze w sezonie: {seasonPoints} z potrzebnych {seasonPointsToWin}</span>
+          ) : (
+            <span>Zejścia z kija: {breakRuns}</span>
+          )}
+        </div>
+        
+        <Button 
+          variant="outline" 
+          size="icon" 
           onClick={() => onScoreChange(true)}
         >
-          <Plus className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="lg"
-          onClick={() => onScoreChange(false)}
-        >
-          <Minus className="w-5 h-5" />
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
-      
-      <div className="text-center mt-2">
-        <div className="text-lg font-semibold">Wygrane: {wins}</div>
-        <div className="text-sm text-muted-foreground">z {gamesToWin} potrzebnych</div>
-      </div>
+
+      <Button 
+        variant="outline" 
+        className="w-full mt-4 text-yellow-600 border-yellow-600 hover:bg-yellow-100 hover:text-yellow-700"
+        onClick={onBreakAndRun}
+      >
+        <Zap className="h-4 w-4 mr-2" />
+        Zejście z kija (+1)
+      </Button>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Match } from '@/types';
@@ -12,7 +12,7 @@ import BackButton from '@/components/BackButton';
 const MatchView = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { getUserById, getActiveSeasons, addMatch, updateSeasonWithMatch } = useData();
+  const { getUserById, getActiveSeasons, addMatch, updateSeasonWithMatch, getUserPointsInSeason } = useData();
   const match = location.state?.match as Match;
   
   const {
@@ -39,6 +39,10 @@ const MatchView = () => {
   const playerB = getUserById(match?.playerB);
   const activeSeasons = getActiveSeasons();
   const activeSeason = match?.seasonId ? activeSeasons.find(s => s.id === match.seasonId) : null;
+  
+  // Get current season points for each player
+  const seasonPointsA = activeSeason ? getUserPointsInSeason(match.playerA, activeSeason.id) : 0;
+  const seasonPointsB = activeSeason ? getUserPointsInSeason(match.playerB, activeSeason.id) : 0;
 
   const endMatch = () => {
     // First, finish the current game if there's a score
@@ -68,6 +72,9 @@ const MatchView = () => {
     const playerAName = playerA?.nick || 'Gracz A';
     const playerBName = playerB?.nick || 'Gracz B';
     
+    // Get unique game types from all games
+    const gameTypes = Array.from(new Set(finalGames.map(g => g.type)));
+    
     // Create a completely new match object with all required data
     const completedMatch: Match = {
       id: match.id,
@@ -80,7 +87,8 @@ const MatchView = () => {
       winner: matchWinner,
       timeElapsed: elapsedSeconds,
       seasonId: typeof match.seasonId === 'string' ? match.seasonId : undefined,
-      gamesToWin: match.gamesToWin
+      gamesToWin: match.gamesToWin,
+      gameTypes: gameTypes
     };
     
     console.log('Saving match with player names:', completedMatch);
@@ -129,6 +137,10 @@ const MatchView = () => {
         nextBreak={nextBreak}
         gamesToWin={gamesToWin}
         isMatchFinished={isMatchFinished}
+        seasonId={match.seasonId}
+        seasonPointsA={seasonPointsA}
+        seasonPointsB={seasonPointsB}
+        seasonPointsToWin={activeSeason?.pointsToWin}
         onScoreChange={handleScore}
         onBreakAndRun={handleBreakAndRun}
         onToggleBreakRule={toggleBreakRule}

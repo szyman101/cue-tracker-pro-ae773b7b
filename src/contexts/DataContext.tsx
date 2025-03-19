@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Match, Season, GameType } from "../types";
 import { initialUsers } from "../data/initialData";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface DataContextType {
   matches: Match[];
@@ -14,6 +15,8 @@ interface DataContextType {
   getSeasonMatches: (seasonId: string) => Match[];
   getActiveSeasons: () => Season[];
   getUserWinsInSeason: (userId: string, seasonId: string) => number;
+  getUserPointsInSeason: (userId: string, seasonId: string) => number; // Added function for season points
+  getBreakRunsInSeason: (userId: string, seasonId: string) => number; // Added function for break runs
   addMatch: (match: Match) => void;
   addSeason: (season: Season) => void;
   updateSeasonWithMatch: (seasonId: string, matchId: string) => void;
@@ -22,6 +25,7 @@ interface DataContextType {
   deleteSeason: (seasonId: string) => void;
   deleteMatch: (matchId: string) => void;
   endSeason: (seasonId: string, winnerId?: string) => void;
+  checkSeasonCompletionStatus: (seasonId: string) => void; // Added function to check if season should be completed
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -80,6 +84,48 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const seasonMatches = getSeasonMatches(seasonId);
     return seasonMatches.filter(match => match.winner === userId).length;
   };
+  
+  // New function to get user points in a season
+  const getUserPointsInSeason = (userId: string, seasonId: string) => {
+    const seasonMatches = getSeasonMatches(seasonId);
+    let totalPoints = 0;
+    
+    for (const match of seasonMatches) {
+      if (match.playerA === userId || match.playerB === userId) {
+        // Add points based on games won in each match
+        const isPlayerA = match.playerA === userId;
+        
+        for (const game of match.games) {
+          if ((isPlayerA && game.winner === 'A') || (!isPlayerA && game.winner === 'B')) {
+            totalPoints += 1;
+          }
+        }
+      }
+    }
+    
+    return totalPoints;
+  };
+  
+  // New function to get break runs in a season
+  const getBreakRunsInSeason = (userId: string, seasonId: string) => {
+    const seasonMatches = getSeasonMatches(seasonId);
+    let totalBreakRuns = 0;
+    
+    for (const match of seasonMatches) {
+      if (match.playerA === userId || match.playerB === userId) {
+        const isPlayerA = match.playerA === userId;
+        
+        for (const game of match.games) {
+          if (game.breakAndRun && 
+              ((isPlayerA && game.winner === 'A') || (!isPlayerA && game.winner === 'B'))) {
+            totalBreakRuns += 1;
+          }
+        }
+      }
+    }
+    
+    return totalBreakRuns;
+  };
 
   const addMatch = (match: Match) => {
     // If the match already exists, update it instead of adding a new one
@@ -95,6 +141,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [...prev, match];
       }
     });
+    
+    // If this match is part of a season, update the season and check if it's complete
+    if (match.seasonId) {
+      updateSeasonWithMatch(match.seasonId, match.id);
+      checkSeasonCompletionStatus(match.seasonId);
+    }
   };
 
   const addSeason = (season: Season) => {
@@ -182,6 +234,43 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return season;
       })
     );
+    
+    // Notify user that season has ended
+    const season = seasons.find(s => s.id === seasonId);
+    const winner = winnerId ? getUserById(winnerId)?.nick : 'Nie określono';
+    
+    toast({
+      title: "Sezon zakończony",
+      description: `Sezon "${season?.name}" został zakończony. Zwycięzca: ${winner}`,
+    });
+  };
+  
+  // Check if a season should be completed based on points
+  const checkSeasonCompletionStatus = (seasonId: string) => {
+    const season = seasons.find(s => s.id === seasonId);
+    
+    if (!season || !season.active || !season.pointsToWin) return;
+    
+    const seasonMatches = getSeasonMatches(seasonId);
+    const playerPoints: Record<string, number> = {};
+    
+    // Gather all players in this season
+    const players = new Set<string>();
+    seasonMatches.forEach(match => {
+      players.add(match.playerA);
+      players.add(match.playerB);
+    });
+    
+    // Calculate points for each player
+    players.forEach(playerId => {
+      playerPoints[playerId] = getUserPointsInSeason(playerId, seasonId);
+      
+      // Check if any player has reached the required points
+      if (playerPoints[playerId] >= (season.pointsToWin || 0)) {
+        // End the season with this player as winner
+        endSeason(seasonId, playerId);
+      }
+    });
   };
 
   return (
@@ -196,6 +285,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getSeasonMatches,
         getActiveSeasons,
         getUserWinsInSeason,
+        getUserPointsInSeason,
+        getBreakRunsInSeason,
         addMatch,
         addSeason,
         updateSeasonWithMatch,
@@ -203,7 +294,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearSeasons,
         deleteSeason,
         deleteMatch,
-        endSeason
+        endSeason,
+        checkSeasonCompletionStatus
       }}
     >
       {children}

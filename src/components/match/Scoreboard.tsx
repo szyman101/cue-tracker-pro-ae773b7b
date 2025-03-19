@@ -21,6 +21,10 @@ interface ScoreboardProps {
   nextBreak: 'A' | 'B';
   gamesToWin: number;
   isMatchFinished: boolean;
+  seasonId?: string;
+  seasonPointsA?: number;
+  seasonPointsB?: number;
+  seasonPointsToWin?: number;
   onScoreChange: (player: 'A' | 'B', increment: boolean) => void;
   onBreakAndRun: (player: 'A' | 'B') => void;
   onToggleBreakRule: () => void;
@@ -43,6 +47,10 @@ const Scoreboard: React.FC<ScoreboardProps> = ({
   nextBreak,
   gamesToWin,
   isMatchFinished,
+  seasonId,
+  seasonPointsA = 0,
+  seasonPointsB = 0,
+  seasonPointsToWin = 0,
   onScoreChange,
   onBreakAndRun,
   onToggleBreakRule,
@@ -71,6 +79,8 @@ const Scoreboard: React.FC<ScoreboardProps> = ({
             wins={winsA}
             gamesToWin={gamesToWin}
             breakRuns={breakRunsA}
+            seasonPoints={seasonId ? seasonPointsA : undefined}
+            seasonPointsToWin={seasonId ? seasonPointsToWin : undefined}
             onScoreChange={(increment) => onScoreChange('A', increment)}
             onBreakAndRun={() => onBreakAndRun('A')}
           />
@@ -83,6 +93,8 @@ const Scoreboard: React.FC<ScoreboardProps> = ({
             wins={winsB}
             gamesToWin={gamesToWin}
             breakRuns={breakRunsB}
+            seasonPoints={seasonId ? seasonPointsB : undefined}
+            seasonPointsToWin={seasonId ? seasonPointsToWin : undefined}
             onScoreChange={(increment) => onScoreChange('B', increment)}
             onBreakAndRun={() => onBreakAndRun('B')}
           />

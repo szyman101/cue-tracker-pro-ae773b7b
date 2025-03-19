@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, Eye, Link } from "lucide-react";
+import { Trash2, Eye, Link, Clock, Zap } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -37,6 +37,14 @@ const MatchHistory = () => {
       description: "Mecz został usunięty z historii",
     });
   };
+  
+  // Format time elapsed from seconds to MM:SS format
+  const formatTimeElapsed = (seconds?: number) => {
+    if (!seconds) return "--:--";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -56,6 +64,7 @@ const MatchHistory = () => {
                 <TableHead>Przeciwnik</TableHead>
                 <TableHead>Gra</TableHead>
                 <TableHead>Wynik</TableHead>
+                <TableHead>Czas</TableHead>
                 <TableHead>Sezon</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Akcje</TableHead>
@@ -75,10 +84,12 @@ const MatchHistory = () => {
                 // Calculate total scores from all games
                 let totalScoreA = 0;
                 let totalScoreB = 0;
+                let hasBreakRuns = false;
                 
                 match.games.forEach(game => {
                   totalScoreA += game.scoreA;
                   totalScoreB += game.scoreB;
+                  if (game.breakAndRun) hasBreakRuns = true;
                 });
                 
                 // Also keep track of games won for showing win/loss
@@ -90,6 +101,7 @@ const MatchHistory = () => {
                   (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
                 ).length;
                 
+                // Get unique game types played in this match
                 const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
                 const isWinner = match.winner === currentUser?.id;
@@ -105,13 +117,17 @@ const MatchHistory = () => {
                     <TableCell>{gameTypes}</TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>
-                        {isPlayerA ? `${totalScoreA} - ${totalScoreB}` : `${totalScoreB} - ${totalScoreA}`}
+                        {userScore} - {opponentScore}
                       </span>
-                      {match.games.some(g => g.breakAndRun) && (
-                        <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                          R
-                        </span>
+                      {hasBreakRuns && (
+                        <Zap className="inline-block ml-2 h-4 w-4 text-yellow-500" title="Zejście z kija" />
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatTimeElapsed(match.timeElapsed)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {matchSeason ? (
@@ -175,7 +191,7 @@ const MatchHistory = () => {
               })}
               {sortedMatches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={8} className="text-center py-4">
                     Brak historii meczów
                   </TableCell>
                 </TableRow>

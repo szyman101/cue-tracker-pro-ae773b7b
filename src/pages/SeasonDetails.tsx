@@ -7,11 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import BackButton from "@/components/BackButton";
-import { ArrowUpRight, Trophy } from "lucide-react";
+import { ArrowUpRight, Trophy, Zap, Clock } from "lucide-react";
 
 const SeasonDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { seasons, matches, getSeasonMatches, getUserById } = useData();
+  const { seasons, getSeasonMatches, getUserById, getBreakRunsInSeason } = useData();
   const { allUsers } = useAuth();
   
   const season = seasons.find(s => s.id === id);
@@ -33,7 +33,7 @@ const SeasonDetails = () => {
   );
 
   // Get player stats for this season
-  const playerStats: Record<string, { wins: number, matches: number, points: number }> = {};
+  const playerStats: Record<string, { wins: number, matches: number, points: number, breakRuns: number }> = {};
   
   // Initialize stats for all users that participated in this season
   const usersInSeason = new Set<string>();
@@ -44,7 +44,12 @@ const SeasonDetails = () => {
   });
   
   usersInSeason.forEach(userId => {
-    playerStats[userId] = { wins: 0, matches: 0, points: 0 };
+    playerStats[userId] = { 
+      wins: 0, 
+      matches: 0, 
+      points: 0, 
+      breakRuns: getBreakRunsInSeason(userId, season.id)
+    };
   });
   
   // Calculate stats
@@ -67,6 +72,14 @@ const SeasonDetails = () => {
   // Sort players by wins
   const sortedPlayers = Object.entries(playerStats)
     .sort(([, statsA], [, statsB]) => statsB.wins - statsA.wins);
+    
+  // Format time elapsed from seconds to MM:SS format
+  const formatTimeElapsed = (seconds?: number) => {
+    if (!seconds) return "--:--";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -108,6 +121,21 @@ const SeasonDetails = () => {
               </div>
               
               <div className="grid grid-cols-2">
+                <div className="font-medium">Typy gier:</div>
+                <div>{season.gameTypes.join(", ")}</div>
+              </div>
+              
+              <div className="grid grid-cols-2">
+                <div className="font-medium">Meczy do wygrania:</div>
+                <div>{season.matchesToWin}</div>
+              </div>
+              
+              <div className="grid grid-cols-2">
+                <div className="font-medium">Punktów do wygrania:</div>
+                <div>{season.pointsToWin || "Nie określono"}</div>
+              </div>
+              
+              <div className="grid grid-cols-2">
                 <div className="font-medium">Nagroda:</div>
                 <div>{season.prize || "Brak"}</div>
               </div>
@@ -144,6 +172,7 @@ const SeasonDetails = () => {
                   <TableHead className="text-right">Wygrane</TableHead>
                   <TableHead className="text-right">Mecze</TableHead>
                   <TableHead className="text-right">Punkty</TableHead>
+                  <TableHead className="text-right">Zejścia z kija</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -161,12 +190,20 @@ const SeasonDetails = () => {
                       <TableCell className="text-right">{stats.wins}</TableCell>
                       <TableCell className="text-right">{stats.matches}</TableCell>
                       <TableCell className="text-right">{stats.points}</TableCell>
+                      <TableCell className="text-right">
+                        {stats.breakRuns > 0 ? (
+                          <div className="flex items-center justify-end">
+                            {stats.breakRuns}
+                            <Zap className="h-4 w-4 ml-1 text-yellow-500" />
+                          </div>
+                        ) : "0"}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
                 {sortedPlayers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
+                    <TableCell colSpan={5} className="text-center py-4">
                       Brak danych
                     </TableCell>
                   </TableRow>
@@ -189,6 +226,8 @@ const SeasonDetails = () => {
                 <TableHead>Gracz A</TableHead>
                 <TableHead>Gracz B</TableHead>
                 <TableHead>Wynik</TableHead>
+                <TableHead>Gra</TableHead>
+                <TableHead>Czas</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Akcje</TableHead>
               </TableRow>
@@ -202,11 +241,16 @@ const SeasonDetails = () => {
                 // Calculate total scores
                 let totalScoreA = 0;
                 let totalScoreB = 0;
+                let hasBreakRun = false;
                 
                 match.games.forEach(game => {
                   totalScoreA += game.scoreA;
                   totalScoreB += game.scoreB;
+                  if (game.breakAndRun) hasBreakRun = true;
                 });
+                
+                // Get unique game types played in this match
+                const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
                 
                 return (
                   <TableRow key={match.id}>
@@ -218,7 +262,21 @@ const SeasonDetails = () => {
                       {playerB}
                     </TableCell>
                     <TableCell>
-                      {totalScoreA} - {totalScoreB}
+                      <div className="flex items-center">
+                        {totalScoreA} - {totalScoreB}
+                        {hasBreakRun && <Zap className="ml-2 h-4 w-4 text-yellow-500" title="Zejście z kija" />}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                        {gameTypes}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatTimeElapsed(match.timeElapsed)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {match.winner === match.playerA ? (
@@ -247,7 +305,7 @@ const SeasonDetails = () => {
               })}
               {sortedMatches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={8} className="text-center py-4">
                     Brak meczów w tym sezonie
                   </TableCell>
                 </TableRow>
