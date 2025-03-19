@@ -1,158 +1,124 @@
 
-import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Match } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import Scoreboard from '@/components/match/Scoreboard';
 import GameHistory from '@/components/match/GameHistory';
-import { useMatchState } from '@/hooks/use-match-state';
 import BackButton from '@/components/BackButton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const MatchView = () => {
-  const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getUserById, getActiveSeasons, addMatch, updateSeasonWithMatch, getUserPointsInSeason } = useData();
-  const match = location.state?.match as Match;
+  const { matches, getUserById, getActiveSeasons, getUserPointsInSeason } = useData();
   
-  const {
-    currentGame,
-    breakRule,
-    nextBreak,
-    breakRunsA,
-    breakRunsB,
-    games,
-    winsA,
-    winsB,
-    gamesToWin,
-    isMatchFinished,
-    calculateTimeElapsed,
-    handleScore,
-    handleBreakAndRun,
-    toggleBreakRule,
-    finishCurrentGame,
-    currentTime,
-    startTime
-  } = useMatchState({ match });
-
-  const playerA = getUserById(match?.playerA);
-  const playerB = getUserById(match?.playerB);
-  const activeSeasons = getActiveSeasons();
-  const activeSeason = match?.seasonId ? activeSeasons.find(s => s.id === match.seasonId) : null;
+  // Find the match by ID
+  const match = matches.find(m => m.id === id);
   
-  // Get current season points for each player
+  const [timeElapsed, setTimeElapsed] = useState('--:--');
+  
+  useEffect(() => {
+    if (match?.timeElapsed) {
+      // Format time from seconds to MM:SS
+      const minutes = Math.floor(match.timeElapsed / 60);
+      const seconds = match.timeElapsed % 60;
+      setTimeElapsed(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    }
+  }, [match]);
+  
+  if (!match) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mecz nie znaleziony</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Nie znaleziono meczu o podanym identyfikatorze.</p>
+            <BackButton />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  const playerA = getUserById(match.playerA);
+  const playerB = getUserById(match.playerB);
+  const playerAName = match.playerAName || playerA?.nick || 'Gracz A';
+  const playerBName = match.playerBName || playerB?.nick || 'Gracz B';
+  
+  // Calculate additional stats
+  const winsA = match.games.filter(game => game.winner === 'A').length;
+  const winsB = match.games.filter(game => game.winner === 'B').length;
+  const breakRunsA = match.games.filter(game => game.winner === 'A' && game.breakAndRun).length;
+  const breakRunsB = match.games.filter(game => game.winner === 'B' && game.breakAndRun).length;
+  
+  // Get season info if match is part of a season
+  const activeSeason = match.seasonId ? getActiveSeasons().find(s => s.id === match.seasonId) : null;
+  
+  // Get current season points for each player if in a season
   const seasonPointsA = activeSeason ? getUserPointsInSeason(match.playerA, activeSeason.id) : 0;
   const seasonPointsB = activeSeason ? getUserPointsInSeason(match.playerB, activeSeason.id) : 0;
-
-  const endMatch = () => {
-    // First, finish the current game if there's a score
-    let finalGames = [...games];
-    if (currentGame.scoreA > 0 || currentGame.scoreB > 0) {
-      const winner = currentGame.scoreA > currentGame.scoreB ? 'A' : 'B';
-      const finishedCurrentGame = {
-        ...currentGame,
-        winner
-      };
-      finalGames = [...finalGames, finishedCurrentGame];
-    }
-    
-    console.log("Ending match with games:", finalGames);
-    
-    // Calculate winner based on wins
-    const finalWinsA = finalGames.filter(g => g.winner === 'A').length;
-    const finalWinsB = finalGames.filter(g => g.winner === 'B').length;
-    console.log(`Final score - Player A: ${finalWinsA}, Player B: ${finalWinsB}`);
-    
-    const matchWinner = finalWinsA > finalWinsB ? playerA?.id : finalWinsB > finalWinsA ? playerB?.id : 'tie';
-    
-    // Calculate elapsed time in seconds
-    const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-    
-    // Make sure we have player names, defaulting to "Gracz A/B" if not available
-    const playerAName = playerA?.nick || 'Gracz A';
-    const playerBName = playerB?.nick || 'Gracz B';
-    
-    // Get unique game types from all games
-    const gameTypes = Array.from(new Set(finalGames.map(g => g.type)));
-    
-    // Create a completely new match object with all required data
-    const completedMatch: Match = {
-      id: match.id,
-      date: match.date,
-      playerA: match.playerA,
-      playerB: match.playerB,
-      playerAName: playerAName,
-      playerBName: playerBName,
-      games: finalGames, // Use the finalGames array which includes all finished games
-      winner: matchWinner,
-      timeElapsed: elapsedSeconds,
-      seasonId: typeof match.seasonId === 'string' ? match.seasonId : undefined,
-      gamesToWin: match.gamesToWin,
-      gameTypes: gameTypes
-    };
-    
-    console.log('Saving match with player names:', completedMatch);
-    
-    // Save the match to the data store
-    addMatch(completedMatch);
-    
-    // If this match is part of a season, update the season
-    if (typeof match.seasonId === 'string' && match.seasonId) {
-      updateSeasonWithMatch(match.seasonId, match.id);
-    }
-    
-    toast({
-      title: "Mecz zakończony",
-      description: matchWinner === 'tie' 
-        ? "Mecz zakończył się remisem" 
-        : `Wygrał ${getUserById(matchWinner)?.nick}`,
-    });
-    
-    navigate('/dashboard');
-  };
-
-  const handleFinishGame = (winner: 'A' | 'B') => {
-    finishCurrentGame(winner);
-    
-    toast({
-      title: "Partia zakończona",
-      description: `Wygrał ${winner === 'A' ? playerA?.nick : playerB?.nick}`,
-    });
-  };
+  
+  // Get game type (use the first game's type or default to "8-ball")
+  const currentGameType = match.games.length > 0 
+    ? match.games[0].type 
+    : (match.gameTypes && match.gameTypes.length > 0 ? match.gameTypes[0] : "8-ball");
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <Scoreboard
-        currentGameType={currentGame.type}
-        timeElapsed={calculateTimeElapsed()}
-        playerAName={playerA?.nick || ''}
-        playerBName={playerB?.nick || ''}
-        scoreA={currentGame.scoreA}
-        scoreB={currentGame.scoreB}
-        winsA={winsA}
-        winsB={winsB}
-        breakRunsA={breakRunsA}
-        breakRunsB={breakRunsB}
-        breakRule={breakRule}
-        nextBreak={nextBreak}
-        gamesToWin={gamesToWin}
-        isMatchFinished={isMatchFinished}
-        seasonId={match.seasonId}
-        seasonPointsA={seasonPointsA}
-        seasonPointsB={seasonPointsB}
-        seasonPointsToWin={activeSeason?.pointsToWin}
-        onScoreChange={handleScore}
-        onBreakAndRun={handleBreakAndRun}
-        onToggleBreakRule={toggleBreakRule}
-        onFinishGame={handleFinishGame}
-        onEndMatch={endMatch}
-      />
-      
-      <GameHistory 
-        games={games} 
-        playerAName={playerA?.nick || ''} 
-        playerBName={playerB?.nick || ''} 
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Szczegóły meczu</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <p><strong>Data:</strong> {new Date(match.date).toLocaleDateString()}</p>
+            <p><strong>Typ gry:</strong> {match.gameTypes?.join(', ') || currentGameType}</p>
+            <p><strong>Czas trwania:</strong> {timeElapsed}</p>
+            {match.winner && (
+              <p>
+                <strong>Zwycięzca:</strong> {match.winner === match.playerA ? playerAName : playerBName}
+              </p>
+            )}
+            {match.notes && <p><strong>Notatki:</strong> {match.notes}</p>}
+          </div>
+          
+          <Scoreboard
+            currentGameType={currentGameType}
+            timeElapsed={timeElapsed}
+            playerAName={playerAName}
+            playerBName={playerBName}
+            scoreA={0}
+            scoreB={0}
+            winsA={winsA}
+            winsB={winsB}
+            breakRunsA={breakRunsA}
+            breakRunsB={breakRunsB}
+            breakRule="alternate"
+            nextBreak="A"
+            gamesToWin={match.gamesToWin || 3}
+            isMatchFinished={true}
+            seasonId={match.seasonId}
+            seasonPointsA={seasonPointsA}
+            seasonPointsB={seasonPointsB}
+            seasonPointsToWin={activeSeason?.matchesToWin}
+            onScoreChange={() => {}}
+            onBreakAndRun={() => {}}
+            onToggleBreakRule={() => {}}
+            onFinishGame={() => {}}
+            onEndMatch={() => {}}
+          />
+          
+          <GameHistory 
+            games={match.games} 
+            playerAName={playerAName} 
+            playerBName={playerBName} 
+          />
+        </CardContent>
+      </Card>
       
       <BackButton />
     </div>

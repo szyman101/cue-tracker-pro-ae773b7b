@@ -36,7 +36,11 @@ const ScoreCounter: React.FC<ScoreCounterProps> = ({
           {isBreak && <span className="ml-2 text-primary font-bold">(Break)</span>}
         </h3>
         <div className="text-sm">
-          Wygrane: {wins} z {gamesToWin}
+          {seasonPoints !== undefined && seasonPointsToWin ? (
+            <span>Wygrane mecze w sezonie: {seasonPoints} z {seasonPointsToWin}</span>
+          ) : (
+            <span>Wygrane: {wins} z {gamesToWin}</span>
+          )}
         </div>
       </div>
 
@@ -53,11 +57,7 @@ const ScoreCounter: React.FC<ScoreCounterProps> = ({
         </Button>
         
         <div className="text-sm">
-          {seasonPoints !== undefined && seasonPointsToWin ? (
-            <span>Wygrane mecze w sezonie: {seasonPoints} z potrzebnych {seasonPointsToWin}</span>
-          ) : (
-            <span>Zejścia z kija: {breakRuns}</span>
-          )}
+          <span>Zejścia z kija: {breakRuns}</span>
         </div>
         
         <Button 

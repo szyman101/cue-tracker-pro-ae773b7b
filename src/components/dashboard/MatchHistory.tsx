@@ -92,7 +92,9 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
                     </span>
                   )}
                   {breakRuns && (
-                    <Zap className="h-4 w-4 text-yellow-500" title="Zejście z kija" />
+                    <span className="flex items-center">
+                      <Zap className="h-4 w-4 text-yellow-500" aria-label="Zejście z kija" />
+                    </span>
                   )}
                 </div>
                 <div className="flex gap-2 justify-end">

@@ -120,7 +120,9 @@ const MatchHistory = () => {
                         {userScore} - {opponentScore}
                       </span>
                       {hasBreakRuns && (
-                        <Zap className="inline-block ml-2 h-4 w-4 text-yellow-500" title="Zejście z kija" />
+                        <span className="inline-flex ml-2">
+                          <Zap className="h-4 w-4 text-yellow-500" aria-label="Zejście z kija" />
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>

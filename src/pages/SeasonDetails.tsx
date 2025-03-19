@@ -1,13 +1,12 @@
 
 import React from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import BackButton from "@/components/BackButton";
-import { ArrowUpRight, Trophy, Zap, Clock } from "lucide-react";
+import { Trophy, Zap, Clock } from "lucide-react";
 
 const SeasonDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -131,11 +130,6 @@ const SeasonDetails = () => {
               </div>
               
               <div className="grid grid-cols-2">
-                <div className="font-medium">Punktów do wygrania:</div>
-                <div>{season.pointsToWin || "Nie określono"}</div>
-              </div>
-              
-              <div className="grid grid-cols-2">
                 <div className="font-medium">Nagroda:</div>
                 <div>{season.prize || "Brak"}</div>
               </div>
@@ -229,7 +223,6 @@ const SeasonDetails = () => {
                 <TableHead>Gra</TableHead>
                 <TableHead>Czas</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Akcje</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -264,7 +257,11 @@ const SeasonDetails = () => {
                     <TableCell>
                       <div className="flex items-center">
                         {totalScoreA} - {totalScoreB}
-                        {hasBreakRun && <Zap className="ml-2 h-4 w-4 text-yellow-500" title="Zejście z kija" />}
+                        {hasBreakRun && (
+                          <span className="ml-2">
+                            <Zap className="h-4 w-4 text-yellow-500" aria-label="Zejście z kija" />
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -293,19 +290,12 @@ const SeasonDetails = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" asChild>
-                        <Link to={`/match/${match.id}`}>
-                          <ArrowUpRight className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 );
               })}
               {sortedMatches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Brak meczów w tym sezonie
                   </TableCell>
                 </TableRow>

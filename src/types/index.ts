@@ -51,5 +51,5 @@ export interface Season {
   gamesPerMatch?: number; // Changed from matchesPerGame to gamesPerMatch to match usage in data
   stake?: number; // Adding stake field which is used in initialData
   description?: string; // Adding description field
-  pointsToWin?: number; // Added field for points needed to win the season
+  pointsToWin?: number; // Field for points needed to win the season (keeping for backward compatibility)
 }

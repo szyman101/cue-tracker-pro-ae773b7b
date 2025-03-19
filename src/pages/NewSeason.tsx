@@ -19,7 +19,6 @@ const NewSeason = () => {
   const [name, setName] = useState('');
   const [prize, setPrize] = useState('');
   const [matchesToWin, setMatchesToWin] = useState('3');
-  const [pointsToWin, setPointsToWin] = useState('10');
   const [selectedGameTypes, setSelectedGameTypes] = useState<GameType[]>(['8-ball']);
   const [description, setDescription] = useState('');
 
@@ -50,7 +49,6 @@ const NewSeason = () => {
       startDate: new Date().toISOString(),
       gameTypes: selectedGameTypes,
       matchesToWin: parseInt(matchesToWin),
-      pointsToWin: parseInt(pointsToWin),
       breakRule: 'alternate',
       prize: prize || undefined,
       active: true,
@@ -105,22 +103,6 @@ const NewSeason = () => {
                 {[...Array(10)].map((_, index) => (
                   <SelectItem key={index + 1} value={(index + 1).toString()}>
                     {index + 1}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="pointsToWin">Liczba punktów do wygrania sezonu</Label>
-            <Select value={pointsToWin} onValueChange={setPointsToWin}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[5, 10, 15, 20, 25, 30, 50, 100].map((points) => (
-                  <SelectItem key={points} value={points.toString()}>
-                    {points}
                   </SelectItem>
                 ))}
               </SelectContent>
