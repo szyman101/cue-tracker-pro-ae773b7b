@@ -10,6 +10,7 @@ import { GameType, Match } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
+import { CueBall } from 'lucide-react';
 
 const NewMatch = () => {
   const navigate = useNavigate();
@@ -58,14 +59,17 @@ const NewMatch = () => {
     addMatch(newMatch);
     
     // Navigate to match page
-    navigate(`/match/${newMatch.id}`);
+    navigate(`/match/${newMatch.id}?view=play`);
   };
 
   return (
     <div className="container mx-auto py-6">
       <Card>
         <CardHeader>
-          <CardTitle>Nowy mecz</CardTitle>
+          <CardTitle className="flex items-center">
+            <CueBall className="h-6 w-6 mr-2 text-primary" aria-label="New Match" />
+            Nowy mecz
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

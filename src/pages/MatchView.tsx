@@ -1,18 +1,24 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
-import { Match } from '@/types';
+import { Match, GameResult } from '@/types';
 import GameHistory from '@/components/match/GameHistory';
+import Scoreboard from '@/components/match/Scoreboard';
 import BackButton from '@/components/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Trophy, Zap, Circle } from 'lucide-react';
+import { Clock, Trophy, Zap, Circle, CueBall } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useMatchState } from '@/hooks/use-match-state';
+import { toast } from '@/hooks/use-toast';
 
 const MatchView = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const view = queryParams.get('view') || 'details';
+  
   const navigate = useNavigate();
-  const { matches, getUserById, getActiveSeasons, getUserPointsInSeason } = useData();
+  const { matches, getUserById, getActiveSeasons, getUserPointsInSeason, addMatch } = useData();
   
   // Find the match by ID
   const match = matches.find(m => m.id === id);
@@ -42,6 +48,12 @@ const MatchView = () => {
     );
   }
   
+  // If view=play, show the Scoreboard
+  if (view === 'play') {
+    return <MatchScoreboard match={match} />;
+  }
+  
+  // Otherwise, show the match details
   const playerA = getUserById(match.playerA);
   const playerB = getUserById(match.playerB);
   const playerAName = match.playerAName || playerA?.nick || 'Gracz A';
@@ -65,7 +77,7 @@ const MatchView = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Circle className="h-6 w-6 text-primary" aria-label="Match details" />
+            <CueBall className="h-6 w-6 text-primary" aria-label="Match details" />
             Szczegóły meczu
           </CardTitle>
         </CardHeader>
@@ -138,6 +150,108 @@ const MatchView = () => {
       </Card>
       
       <BackButton />
+    </div>
+  );
+};
+
+const MatchScoreboard: React.FC<{ match: Match }> = ({ match }) => {
+  const navigate = useNavigate();
+  const { addMatch, getUserById } = useData();
+  
+  const {
+    currentGame,
+    breakRule,
+    nextBreak,
+    breakRunsA,
+    breakRunsB,
+    games,
+    winsA,
+    winsB,
+    gamesToWin,
+    isMatchFinished,
+    calculateTimeElapsed,
+    handleScore,
+    handleBreakAndRun,
+    toggleBreakRule,
+    finishCurrentGame,
+    setGames
+  } = useMatchState({ match });
+
+  const playerA = getUserById(match.playerA);
+  const playerB = getUserById(match.playerB);
+  const playerAName = match.playerAName || playerA?.nick || 'Gracz A';
+  const playerBName = match.playerBName || playerB?.nick || 'Gracz B';
+
+  const handleEndMatch = () => {
+    let winner = '';
+    if (winsA > winsB) {
+      winner = match.playerA;
+    } else if (winsB > winsA) {
+      winner = match.playerB;
+    }
+    
+    const timeParts = calculateTimeElapsed().split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    const seconds = parseInt(timeParts[2], 10);
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    
+    const updatedMatch = {
+      ...match,
+      games,
+      winner,
+      timeElapsed: totalSeconds
+    };
+    
+    addMatch(updatedMatch);
+    
+    toast({
+      title: "Mecz zakończony",
+      description: winner ? `Zwycięzca: ${winner === match.playerA ? playerAName : playerBName}` : "Mecz zakończony remisem"
+    });
+    
+    navigate(`/match/${match.id}`);
+  };
+
+  return (
+    <div className="container mx-auto py-6">
+      <Scoreboard
+        currentGameType={currentGame.type || '8-ball'}
+        timeElapsed={calculateTimeElapsed()}
+        playerAName={playerAName}
+        playerBName={playerBName}
+        scoreA={currentGame.scoreA}
+        scoreB={currentGame.scoreB}
+        winsA={winsA}
+        winsB={winsB}
+        breakRunsA={breakRunsA}
+        breakRunsB={breakRunsB}
+        breakRule={breakRule}
+        nextBreak={nextBreak}
+        gamesToWin={gamesToWin}
+        isMatchFinished={isMatchFinished}
+        seasonId={match.seasonId}
+        seasonPointsA={winsA}
+        seasonPointsB={winsB}
+        seasonPointsToWin={gamesToWin}
+        onScoreChange={handleScore}
+        onBreakAndRun={handleBreakAndRun}
+        onToggleBreakRule={toggleBreakRule}
+        onFinishGame={finishCurrentGame}
+        onEndMatch={handleEndMatch}
+      />
+      
+      <div className="mt-6">
+        <GameHistory 
+          games={games} 
+          playerAName={playerAName} 
+          playerBName={playerBName} 
+        />
+      </div>
+      
+      <div className="mt-4">
+        <BackButton />
+      </div>
     </div>
   );
 };
