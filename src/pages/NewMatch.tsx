@@ -59,7 +59,6 @@ const NewMatch = () => {
     addMatch(newMatch);
     
     // Navigate to match page with view=play parameter to show scoreboard
-    // Here's the critical fix - making sure to add the view=play parameter
     navigate(`/match/${newMatch.id}?view=play`);
   };
 

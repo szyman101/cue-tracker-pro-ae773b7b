@@ -58,20 +58,16 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const season = userSeasons.find(s => s.id === match.seasonId);
             
-            // Extract the scores from each game
-            let totalScoreA = 0;
-            let totalScoreB = 0;
-            let breakRuns = false;
+            // Calculate proper win counts from game results
+            const winsA = match.games.filter(game => game.winner === 'A').length;
+            const winsB = match.games.filter(game => game.winner === 'B').length;
             
-            // Sum up all points from all games and check for break runs
-            match.games.forEach(game => {
-              totalScoreA += game.scoreA;
-              totalScoreB += game.scoreB;
-              if (game.breakAndRun) breakRuns = true;
-            });
+            // Check for break runs
+            const breakRuns = match.games.some(game => game.breakAndRun);
             
             // Get unique game types played in this match
-            const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
+            const gameTypes = match.gameTypes || 
+              Array.from(new Set(match.games.map(g => g.type || '8-ball'))).join(", ");
 
             return (
               <div key={match.id} className="grid grid-cols-6 p-4 hover:bg-muted/50">
@@ -79,16 +75,19 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
                 <div className={match.winner === match.playerA ? "font-bold" : ""}>{playerA}</div>
                 <div className={match.winner === match.playerB ? "font-bold" : ""}>{playerB}</div>
                 <div>
-                  {totalScoreA} - {totalScoreB}
+                  {winsA} - {winsB}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-                    {gameTypes}
-                  </span>
-                  {match.timeElapsed && (
-                    <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatTimeElapsed(match.timeElapsed)}
+                  {gameTypes && (
+                    <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full inline-flex items-center gap-1">
+                      {gameTypes}
+                      {match.timeElapsed > 0 && (
+                        <>
+                          <span className="mx-1">•</span>
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeElapsed(match.timeElapsed)}</span>
+                        </>
+                      )}
                     </span>
                   )}
                   {breakRuns && (

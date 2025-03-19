@@ -69,7 +69,12 @@ const Scoreboard: React.FC<ScoreboardProps> = ({
               <Timer className="h-5 w-5 mr-1 text-gray-600 dark:text-gray-400" />
               <span className="font-mono">{timeElapsed}</span>
             </div>
-            <div className="px-2 py-1 rounded-full bg-primary/10 text-sm font-medium">
+            <div className="px-2 py-1 rounded-full bg-primary/10 text-sm font-medium flex items-center">
+              <img 
+                src="/lovable-uploads/42dedce4-b6f5-4c64-8f0a-ef55fb5ee4e9.png" 
+                alt={currentGameType} 
+                className="w-4 h-4 mr-1" 
+              />
               {currentGameType}
             </div>
           </div>

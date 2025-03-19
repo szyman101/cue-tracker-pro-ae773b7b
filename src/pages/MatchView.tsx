@@ -201,7 +201,8 @@ const MatchScoreboard: React.FC<{ match: Match }> = ({ match }) => {
       ...match,
       games,
       winner,
-      timeElapsed: totalSeconds
+      timeElapsed: totalSeconds,
+      gameTypes: Array.from(new Set(games.map(game => game.type)))
     };
     
     addMatch(updatedMatch);
@@ -211,7 +212,8 @@ const MatchScoreboard: React.FC<{ match: Match }> = ({ match }) => {
       description: winner ? `Zwycięzca: ${winner === match.playerA ? playerAName : playerBName}` : "Mecz zakończony remisem"
     });
     
-    navigate(`/match/${match.id}`);
+    // Redirect to dashboard after match end
+    navigate('/dashboard');
   };
 
   return (

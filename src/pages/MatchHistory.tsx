@@ -81,43 +81,36 @@ const MatchHistory = () => {
                 
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
                 
-                // Calculate total scores from all games
-                let totalScoreA = 0;
-                let totalScoreB = 0;
-                let hasBreakRuns = false;
+                // Calculate win counts properly
+                const winsA = match.games.filter(g => g.winner === 'A').length;
+                const winsB = match.games.filter(g => g.winner === 'B').length;
                 
-                match.games.forEach(game => {
-                  totalScoreA += game.scoreA;
-                  totalScoreB += game.scoreB;
-                  if (game.breakAndRun) hasBreakRuns = true;
-                });
-                
-                // Also keep track of games won for showing win/loss
-                const userWins = match.games.filter(g => 
-                  (isPlayerA && g.winner === "A") || (!isPlayerA && g.winner === "B")
-                ).length;
-                
-                const opponentWins = match.games.filter(g => 
-                  (isPlayerA && g.winner === "B") || (!isPlayerA && g.winner === "A")
-                ).length;
-                
-                // Get unique game types played in this match
-                const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
-                
+                // Determine if user won
                 const isWinner = match.winner === currentUser?.id;
                 
-                // Display user's score first, followed by opponent's score
-                const userScore = isPlayerA ? totalScoreA : totalScoreB;
-                const opponentScore = isPlayerA ? totalScoreB : totalScoreA;
+                // Check for break runs
+                const hasBreakRuns = match.games.some(g => g.breakAndRun);
+                
+                // Get unique game types played in this match
+                const gameTypes = match.gameTypes || 
+                  Array.from(new Set(match.games.map(g => g.type || '8-ball'))).join(", ");
+                
+                // Display user's wins first, followed by opponent's wins
+                const userWins = isPlayerA ? winsA : winsB;
+                const opponentWins = isPlayerA ? winsB : winsA;
 
                 return (
                   <TableRow key={match.id}>
                     <TableCell>{new Date(match.date).toLocaleDateString()}</TableCell>
                     <TableCell>{opponentName}</TableCell>
-                    <TableCell>{gameTypes}</TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                        {gameTypes}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <span className={isWinner ? "font-bold" : ""}>
-                        {userScore} - {opponentScore}
+                        {userWins} - {opponentWins}
                       </span>
                       {hasBreakRuns && (
                         <span className="inline-flex ml-2">

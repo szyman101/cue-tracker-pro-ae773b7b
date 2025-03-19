@@ -29,7 +29,12 @@ const MatchControls: React.FC<MatchControlsProps> = ({
         {breakRule === 'winner' ? 'Rozbija zwycięzca' : 'Rozbicie na zmianę'}
       </Button>
       
-      <div className="text-center px-3 py-1 rounded-full bg-primary/10">
+      <div className="text-center px-3 py-1 rounded-full bg-primary/10 flex items-center">
+        <img 
+          src="/lovable-uploads/42dedce4-b6f5-4c64-8f0a-ef55fb5ee4e9.png" 
+          alt="Billiard ball" 
+          className="w-4 h-4 mr-2" 
+        />
         <span className="text-sm">Następne rozbicie:</span>
         <span className="ml-2 font-bold">{nextBreakPlayerName}</span>
       </div>
