@@ -3,11 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Match } from '@/types';
-import { toast } from '@/hooks/use-toast';
-import Scoreboard from '@/components/match/Scoreboard';
 import GameHistory from '@/components/match/GameHistory';
 import BackButton from '@/components/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Trophy, Zap, Circle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const MatchView = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,15 +31,13 @@ const MatchView = () => {
   if (!match) {
     return (
       <div className="container mx-auto py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mecz nie znaleziony</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Nie znaleziono meczu o podanym identyfikatorze.</p>
-            <BackButton />
-          </CardContent>
-        </Card>
+        <Alert variant="destructive">
+          <AlertTitle>Mecz nie znaleziony</AlertTitle>
+          <AlertDescription>Nie znaleziono meczu o podanym identyfikatorze.</AlertDescription>
+        </Alert>
+        <div className="mt-4">
+          <BackButton />
+        </div>
       </div>
     );
   }
@@ -50,73 +48,92 @@ const MatchView = () => {
   const playerBName = match.playerBName || playerB?.nick || 'Gracz B';
   
   // Calculate additional stats
-  const winsA = match.games.filter(game => game.winner === 'A').length;
-  const winsB = match.games.filter(game => game.winner === 'B').length;
   const breakRunsA = match.games.filter(game => game.winner === 'A' && game.breakAndRun).length;
   const breakRunsB = match.games.filter(game => game.winner === 'B' && game.breakAndRun).length;
+  const winsA = match.games.filter(game => game.winner === 'A').length;
+  const winsB = match.games.filter(game => game.winner === 'B').length;
   
   // Get season info if match is part of a season
   const activeSeason = match.seasonId ? getActiveSeasons().find(s => s.id === match.seasonId) : null;
   
-  // Get current season points for each player if in a season
-  const seasonPointsA = activeSeason ? getUserPointsInSeason(match.playerA, activeSeason.id) : 0;
-  const seasonPointsB = activeSeason ? getUserPointsInSeason(match.playerB, activeSeason.id) : 0;
-  
   // Get game type (use the first game's type or default to "8-ball")
-  const currentGameType = match.games.length > 0 
-    ? match.games[0].type 
-    : (match.gameTypes && match.gameTypes.length > 0 ? match.gameTypes[0] : "8-ball");
+  const gameTypes = match.gameTypes || 
+    (match.games.length > 0 ? match.games.map(game => game.type) : ["8-ball"]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Szczegóły meczu</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <Circle className="h-6 w-6 text-primary" aria-label="Match details" />
+            Szczegóły meczu
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <p><strong>Data:</strong> {new Date(match.date).toLocaleDateString()}</p>
-            <p><strong>Typ gry:</strong> {match.gameTypes?.join(', ') || currentGameType}</p>
-            <p><strong>Czas trwania:</strong> {timeElapsed}</p>
-            {match.winner && (
-              <p>
-                <strong>Zwycięzca:</strong> {match.winner === match.playerA ? playerAName : playerBName}
-              </p>
-            )}
-            {match.notes && <p><strong>Notatki:</strong> {match.notes}</p>}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Circle className="h-4 w-4 text-primary" aria-label="Player" />
+                <span className="font-medium">Gracz 1:</span> {playerAName}
+              </div>
+              <div className="flex items-center gap-2">
+                <Circle className="h-4 w-4 text-primary" aria-label="Player" />
+                <span className="font-medium">Gracz 2:</span> {playerBName}
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" aria-label="Date" />
+                <span className="font-medium">Data:</span> {new Date(match.date).toLocaleDateString()}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Circle className="h-4 w-4" aria-label="Game type" />
+                <span className="font-medium">Typ gry:</span> {gameTypes.join(', ')}
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" aria-label="Duration" />
+                <span className="font-medium">Czas trwania:</span> {timeElapsed}
+              </div>
+              {match.winner && (
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-600" aria-label="Winner" />
+                  <span className="font-medium">Zwycięzca:</span> {match.winner === match.playerA ? playerAName : playerBName}
+                  <span className="text-sm">({winsA} - {winsB})</span>
+                </div>
+              )}
+            </div>
           </div>
           
-          <Scoreboard
-            currentGameType={currentGameType}
-            timeElapsed={timeElapsed}
-            playerAName={playerAName}
-            playerBName={playerBName}
-            scoreA={0}
-            scoreB={0}
-            winsA={winsA}
-            winsB={winsB}
-            breakRunsA={breakRunsA}
-            breakRunsB={breakRunsB}
-            breakRule="alternate"
-            nextBreak="A"
-            gamesToWin={match.gamesToWin || 3}
-            isMatchFinished={true}
-            seasonId={match.seasonId}
-            seasonPointsA={seasonPointsA}
-            seasonPointsB={seasonPointsB}
-            seasonPointsToWin={activeSeason?.matchesToWin}
-            onScoreChange={() => {}}
-            onBreakAndRun={() => {}}
-            onToggleBreakRule={() => {}}
-            onFinishGame={() => {}}
-            onEndMatch={() => {}}
-          />
+          {(breakRunsA > 0 || breakRunsB > 0) && (
+            <div className="mb-6 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <h3 className="text-lg font-medium flex items-center mb-2">
+                <Zap className="h-4 w-4 mr-2 text-amber-600" aria-label="Break runs" />
+                Zejścia z kija
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="font-medium">{playerAName}:</span> {breakRunsA}
+                </div>
+                <div>
+                  <span className="font-medium">{playerBName}:</span> {breakRunsB}
+                </div>
+              </div>
+            </div>
+          )}
           
           <GameHistory 
             games={match.games} 
             playerAName={playerAName} 
             playerBName={playerBName} 
           />
+          
+          {match.notes && (
+            <div className="mt-6 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <h3 className="font-medium mb-1">Notatki:</h3>
+              <p>{match.notes}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       

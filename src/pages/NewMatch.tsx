@@ -14,7 +14,7 @@ import BackButton from '@/components/BackButton';
 const NewMatch = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { users, getActiveSeasons } = useData();
+  const { users, getActiveSeasons, addMatch } = useData();
   const [opponent, setOpponent] = useState<string>('');
   const [gameType, setGameType] = useState<GameType>('8-ball');
   const [gamesToWin, setGamesToWin] = useState<string>('3');
@@ -37,19 +37,28 @@ const NewMatch = () => {
       return;
     }
 
+    const opponentUser = users.find(user => user.id === opponent);
+    
     const newMatch: Match = {
       id: uuidv4(),
       date: new Date().toISOString(),
       playerA: currentUser.id,
       playerB: opponent,
+      playerAName: currentUser.nick,
+      playerBName: opponentUser?.nick,
       games: [],
       winner: '',
       timeElapsed: 0,
       seasonId: selectedSeasonId && selectedSeasonId !== 'none' ? selectedSeasonId : undefined,
-      gamesToWin: parseInt(gamesToWin)
+      gamesToWin: parseInt(gamesToWin),
+      gameTypes: [gameType]
     };
 
-    navigate(`/match/${newMatch.id}`, { state: { match: newMatch } });
+    // Add match to data context
+    addMatch(newMatch);
+    
+    // Navigate to match page
+    navigate(`/match/${newMatch.id}`);
   };
 
   return (

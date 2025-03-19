@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy } from 'lucide-react';
+import { Trophy, Circle } from 'lucide-react';
 
 interface MatchControlsProps {
   breakRule: 'winner' | 'alternate';
@@ -20,18 +20,23 @@ const MatchControls: React.FC<MatchControlsProps> = ({
 }) => {
   return (
     <>
-      <Button variant="outline" onClick={onToggleBreakRule}>
+      <Button 
+        variant="outline" 
+        onClick={onToggleBreakRule}
+        className="border-primary/30 bg-primary/5 hover:bg-primary/10"
+      >
+        <Circle className="h-4 w-4 mr-2 text-primary" aria-label="Break rule" />
         {breakRule === 'winner' ? 'Rozbija zwycięzca' : 'Rozbicie na zmianę'}
       </Button>
       
-      <div className="text-center">
+      <div className="text-center px-3 py-1 rounded-full bg-primary/10">
         <span className="text-sm">Następne rozbicie:</span>
         <span className="ml-2 font-bold">{nextBreakPlayerName}</span>
       </div>
       
       <Button 
         variant="default" 
-        className="w-full flex items-center justify-center gap-2"
+        className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white flex items-center justify-center gap-2"
         onClick={onEndMatch}
       >
         <Trophy className="w-5 h-5" />
