@@ -58,8 +58,11 @@ const SeasonDetails = () => {
     
     // Add points (total score from all games)
     match.games.forEach(game => {
-      playerStats[match.playerA].points += game.scoreA;
-      playerStats[match.playerB].points += game.scoreB;
+      if (game.winner === 'A') {
+        playerStats[match.playerA].points += 1;
+      } else if (game.winner === 'B') {
+        playerStats[match.playerB].points += 1;
+      }
     });
     
     // Add win to winner
@@ -231,19 +234,16 @@ const SeasonDetails = () => {
                 const playerA = allUsers.find(u => u.id === match.playerA)?.nick || match.playerAName || "Nieznany";
                 const playerB = allUsers.find(u => u.id === match.playerB)?.nick || match.playerBName || "Nieznany";
                 
-                // Calculate total scores
-                let totalScoreA = 0;
-                let totalScoreB = 0;
-                let hasBreakRun = false;
+                // Calculate game wins properly
+                const winsA = match.games.filter(game => game.winner === 'A').length;
+                const winsB = match.games.filter(game => game.winner === 'B').length;
                 
-                match.games.forEach(game => {
-                  totalScoreA += game.scoreA;
-                  totalScoreB += game.scoreB;
-                  if (game.breakAndRun) hasBreakRun = true;
-                });
+                // Check for break runs
+                const hasBreakRun = match.games.some(game => game.breakAndRun);
                 
                 // Get unique game types played in this match
-                const gameTypes = Array.from(new Set(match.games.map(g => g.type))).join(", ");
+                const gameTypes = match.gameTypes || 
+                  Array.from(new Set(match.games.map(g => g.type || '8-ball'))).join(", ");
                 
                 return (
                   <TableRow key={match.id}>
@@ -256,7 +256,7 @@ const SeasonDetails = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        {totalScoreA} - {totalScoreB}
+                        {winsA} - {winsB}
                         {hasBreakRun && (
                           <span className="ml-2">
                             <Zap className="h-4 w-4 text-yellow-500" aria-label="Zejście z kija" />

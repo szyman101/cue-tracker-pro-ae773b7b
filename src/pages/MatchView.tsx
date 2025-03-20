@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
@@ -243,14 +242,6 @@ const MatchScoreboard: React.FC<{ match: Match }> = ({ match }) => {
         onFinishGame={finishCurrentGame}
         onEndMatch={handleEndMatch}
       />
-      
-      <div className="mt-6">
-        <GameHistory 
-          games={games} 
-          playerAName={playerAName} 
-          playerBName={playerBName} 
-        />
-      </div>
       
       <div className="mt-4">
         <BackButton />
