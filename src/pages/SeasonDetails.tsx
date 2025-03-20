@@ -248,10 +248,10 @@ const SeasonDetails = () => {
                 return (
                   <TableRow key={match.id}>
                     <TableCell>{new Date(match.date).toLocaleDateString()}</TableCell>
-                    <TableCell className={match.winner === match.playerA ? "font-bold" : ""}>
+                    <TableCell className={winsA > winsB ? "font-bold" : ""}>
                       {playerA}
                     </TableCell>
-                    <TableCell className={match.winner === match.playerB ? "font-bold" : ""}>
+                    <TableCell className={winsB > winsA ? "font-bold" : ""}>
                       {playerB}
                     </TableCell>
                     <TableCell>
@@ -276,11 +276,11 @@ const SeasonDetails = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {match.winner === match.playerA ? (
+                      {winsA > winsB ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
                           Wygrana {playerA}
                         </span>
-                      ) : match.winner === match.playerB ? (
+                      ) : winsB > winsA ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
                           Wygrana {playerB}
                         </span>

@@ -145,6 +145,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     
+    // Make sure gameTypes is set
+    if (!updatedMatch.gameTypes && updatedMatch.games.length > 0) {
+      updatedMatch.gameTypes = Array.from(
+        new Set(updatedMatch.games.map(game => game.type || '8-ball'))
+      );
+    }
+    
     // If the match already exists, update it instead of adding a new one
     setMatches(prev => {
       const matchIndex = prev.findIndex(m => m.id === updatedMatch.id);
