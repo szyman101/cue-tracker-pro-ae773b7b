@@ -3,13 +3,10 @@ import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, Eye, Link, Clock, Zap } from "lucide-react";
 import BackButton from "@/components/BackButton";
-import { Link as RouterLink } from "react-router-dom";
+import MatchHistoryHeader from "@/components/history/MatchHistoryHeader";
+import MatchHistoryTable from "@/components/history/MatchHistoryTable";
 
 const MatchHistory = () => {
   const { currentUser } = useAuth();
@@ -37,187 +34,24 @@ const MatchHistory = () => {
       description: "Mecz został usunięty z historii",
     });
   };
-  
-  // Format time elapsed from seconds to MM:SS format
-  const formatTimeElapsed = (seconds?: number) => {
-    if (!seconds) return "--:--";
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Historia meczów</h1>
-      </div>
+      <MatchHistoryHeader />
       
       <Card>
         <CardHeader>
           <CardTitle>Twoje mecze</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Przeciwnik</TableHead>
-                <TableHead>Gra</TableHead>
-                <TableHead>Wynik</TableHead>
-                <TableHead>Czas</TableHead>
-                <TableHead>Sezon</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Akcje</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedMatches.map((match) => {
-                const isPlayerA = match.playerA === currentUser?.id;
-                const opponentId = isPlayerA ? match.playerB : match.playerA;
-                
-                const opponentName = isPlayerA 
-                  ? (match.playerBName || getUserById(match.playerB)?.nick || "Nieznany przeciwnik")
-                  : (match.playerAName || getUserById(match.playerA)?.nick || "Nieznany przeciwnik");
-                
-                const matchSeason = seasons.find(s => s.id === match.seasonId);
-                
-                // Calculate win counts correctly from game results
-                const winsA = match.games.filter(g => g.winner === 'A').length;
-                const winsB = match.games.filter(g => g.winner === 'B').length;
-                
-                // Determine if user won
-                const userWon = (isPlayerA && winsA > winsB) || (!isPlayerA && winsB > winsA);
-                const userLost = (isPlayerA && winsA < winsB) || (!isPlayerA && winsB < winsA);
-                const isDraw = winsA === winsB;
-                
-                // Check for break runs
-                const hasBreakRuns = match.games.some(g => g.breakAndRun);
-                
-                // Get unique game types played in this match
-                const gameTypes = match.gameTypes || 
-                  Array.from(new Set(match.games.map(g => g.type || '8-ball'))).join(", ");
-                
-                // Display user's wins first, followed by opponent's wins
-                const userWins = isPlayerA ? winsA : winsB;
-                const opponentWins = isPlayerA ? winsB : winsA;
-
-                return (
-                  <TableRow key={match.id}>
-                    <TableCell>{new Date(match.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{opponentName}</TableCell>
-                    <TableCell>
-                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-                        {gameTypes}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={userWon ? "font-bold" : ""}>
-                        {userWins} - {opponentWins}
-                      </span>
-                      {hasBreakRuns && (
-                        <span className="inline-flex ml-2">
-                          <Zap className="h-4 w-4 text-yellow-500" aria-label="Zejście z kija" />
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {formatTimeElapsed(match.timeElapsed)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {matchSeason ? (
-                        <div className="flex items-center">
-                          <RouterLink to={`/season/${matchSeason.id}`} className="text-primary hover:underline flex items-center">
-                            {matchSeason.name}
-                            <Link className="h-3 w-3 ml-1" />
-                          </RouterLink>
-                        </div>
-                      ) : (
-                        "Towarzyski"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {userWon ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                          Wygrana
-                        </span>
-                      ) : userLost ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
-                          Przegrana
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100">
-                          Remis
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" asChild>
-                          <RouterLink to={`/match/${match.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </RouterLink>
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Czy na pewno chcesz usunąć ten mecz?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Ta akcja usunie mecz z historii i nie można jej cofnąć.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteMatch(match.id)}>
-                                Usuń mecz
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {sortedMatches.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
-                    Brak historii meczów
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="flex justify-end mt-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Wyczyść historię
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Czy na pewno chcesz wyczyścić historię?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Ta akcja usunie wszystkie zapisane mecze. Operacja jest nieodwracalna.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearHistory}>Tak, wyczyść</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          <MatchHistoryTable 
+            matches={sortedMatches}
+            currentUser={currentUser}
+            seasons={seasons}
+            onDeleteMatch={handleDeleteMatch}
+            onClearHistory={handleClearHistory}
+            getUserById={getUserById}
+          />
         </CardContent>
       </Card>
       
