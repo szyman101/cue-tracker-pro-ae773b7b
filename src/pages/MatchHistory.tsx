@@ -81,12 +81,14 @@ const MatchHistory = () => {
                 
                 const matchSeason = seasons.find(s => s.id === match.seasonId);
                 
-                // Calculate win counts properly
+                // Calculate win counts correctly from game results
                 const winsA = match.games.filter(g => g.winner === 'A').length;
                 const winsB = match.games.filter(g => g.winner === 'B').length;
                 
                 // Determine if user won
-                const isWinner = match.winner === currentUser?.id;
+                const userWon = (isPlayerA && winsA > winsB) || (!isPlayerA && winsB > winsA);
+                const userLost = (isPlayerA && winsA < winsB) || (!isPlayerA && winsB < winsA);
+                const isDraw = winsA === winsB;
                 
                 // Check for break runs
                 const hasBreakRuns = match.games.some(g => g.breakAndRun);
@@ -109,7 +111,7 @@ const MatchHistory = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={isWinner ? "font-bold" : ""}>
+                      <span className={userWon ? "font-bold" : ""}>
                         {userWins} - {opponentWins}
                       </span>
                       {hasBreakRuns && (
@@ -137,11 +139,11 @@ const MatchHistory = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isWinner ? (
+                      {userWon ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
                           Wygrana
                         </span>
-                      ) : match.winner ? (
+                      ) : userLost ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
                           Przegrana
                         </span>

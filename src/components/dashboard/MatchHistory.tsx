@@ -58,7 +58,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const season = userSeasons.find(s => s.id === match.seasonId);
             
-            // Calculate proper win counts from game results
+            // Calculate wins from game results
             const winsA = match.games.filter(game => game.winner === 'A').length;
             const winsB = match.games.filter(game => game.winner === 'B').length;
             

@@ -128,24 +128,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addMatch = (match: Match) => {
+    // If match doesn't have winner set but has games, determine winner based on game wins
+    let updatedMatch = { ...match };
+    
+    if (match.games.length > 0) {
+      const winsA = match.games.filter(game => game.winner === 'A').length;
+      const winsB = match.games.filter(game => game.winner === 'B').length;
+      
+      if (winsA > winsB) {
+        updatedMatch.winner = match.playerA;
+      } else if (winsB > winsA) {
+        updatedMatch.winner = match.playerB;
+      } else if (winsA === winsB && winsA > 0) {
+        // Draw if there are games but equal wins
+        updatedMatch.winner = "";
+      }
+    }
+    
     // If the match already exists, update it instead of adding a new one
     setMatches(prev => {
-      const matchIndex = prev.findIndex(m => m.id === match.id);
+      const matchIndex = prev.findIndex(m => m.id === updatedMatch.id);
       if (matchIndex >= 0) {
         // Replace the existing match
         const updatedMatches = [...prev];
-        updatedMatches[matchIndex] = match;
+        updatedMatches[matchIndex] = updatedMatch;
         return updatedMatches;
       } else {
         // Add as a new match
-        return [...prev, match];
+        return [...prev, updatedMatch];
       }
     });
     
     // If this match is part of a season, update the season and check if it's complete
-    if (match.seasonId) {
-      updateSeasonWithMatch(match.seasonId, match.id);
-      checkSeasonCompletionStatus(match.seasonId);
+    if (updatedMatch.seasonId) {
+      updateSeasonWithMatch(updatedMatch.seasonId, updatedMatch.id);
+      checkSeasonCompletionStatus(updatedMatch.seasonId);
     }
   };
 
