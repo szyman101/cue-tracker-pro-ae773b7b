@@ -58,7 +58,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
             const playerB = match.playerBName || (match.playerB === currentUser?.id ? currentUser.nick : "Przeciwnik");
             const season = userSeasons.find(s => s.id === match.seasonId);
             
-            // Calculate wins from game results
+            // Calculate wins from game results - not from match.winner
             const winsA = match.games.filter(game => game.winner === 'A').length;
             const winsB = match.games.filter(game => game.winner === 'B').length;
             
@@ -72,8 +72,8 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ userMatches, userSeasons, c
             return (
               <div key={match.id} className="grid grid-cols-6 p-4 hover:bg-muted/50">
                 <div>{new Date(match.date).toLocaleDateString()}</div>
-                <div className={match.winner === match.playerA ? "font-bold" : ""}>{playerA}</div>
-                <div className={match.winner === match.playerB ? "font-bold" : ""}>{playerB}</div>
+                <div className={winsA > winsB ? "font-bold" : ""}>{playerA}</div>
+                <div className={winsB > winsA ? "font-bold" : ""}>{playerB}</div>
                 <div>
                   {winsA} - {winsB}
                 </div>

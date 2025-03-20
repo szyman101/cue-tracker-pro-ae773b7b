@@ -59,7 +59,13 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, playerAName, playerBNa
                 </div>
                 
                 <div className="text-center">
-                  <div className="px-3 py-1 rounded-full bg-primary/10 text-sm font-medium">
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    game.winner === 'A' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
+                      : game.winner === 'B' 
+                        ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
+                  }`}>
                     {game.winner === 'A' 
                       ? `Wygrywa ${playerAName}` 
                       : game.winner === 'B' 

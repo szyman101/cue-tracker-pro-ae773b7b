@@ -59,7 +59,7 @@ const MatchView = () => {
   const playerAName = match.playerAName || playerA?.nick || 'Gracz A';
   const playerBName = match.playerBName || playerB?.nick || 'Gracz B';
   
-  // Calculate additional stats
+  // Calculate additional stats from games, not relying on match.winner
   const breakRunsA = match.games.filter(game => game.winner === 'A' && game.breakAndRun).length;
   const breakRunsB = match.games.filter(game => game.winner === 'B' && game.breakAndRun).length;
   const winsA = match.games.filter(game => game.winner === 'A').length;
@@ -70,7 +70,7 @@ const MatchView = () => {
   
   // Get game type (use the first game's type or default to "8-ball")
   const gameTypes = match.gameTypes || 
-    (match.games.length > 0 ? match.games.map(game => game.type) : ["8-ball"]);
+    (match.games.length > 0 ? Array.from(new Set(match.games.map(game => game.type || '8-ball'))) : ["8-ball"]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -107,13 +107,16 @@ const MatchView = () => {
                 <Clock className="h-4 w-4" aria-label="Duration" />
                 <span className="font-medium">Czas trwania:</span> {timeElapsed}
               </div>
-              {match.winner && (
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-600" aria-label="Winner" />
-                  <span className="font-medium">Zwycięzca:</span> {match.winner === match.playerA ? playerAName : playerBName}
-                  <span className="text-sm">({winsA} - {winsB})</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-yellow-600" aria-label="Result" />
+                <span className="font-medium">Wynik:</span> 
+                <span className={winsA > winsB ? "font-bold" : ""}>{winsA}</span>
+                {" - "}
+                <span className={winsB > winsA ? "font-bold" : ""}>{winsB}</span>
+                {winsA > winsB && <span className="text-sm ml-2">(Wygrywa {playerAName})</span>}
+                {winsB > winsA && <span className="text-sm ml-2">(Wygrywa {playerBName})</span>}
+                {winsA === winsB && winsA > 0 && <span className="text-sm ml-2">(Remis)</span>}
+              </div>
             </div>
           </div>
           

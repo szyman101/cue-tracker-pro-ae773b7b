@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Match, Season, GameType } from "../types";
 import { initialUsers } from "../data/initialData";
@@ -128,19 +127,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addMatch = (match: Match) => {
-    // If match doesn't have winner set but has games, determine winner based on game wins
+    // Start with a copy of the match
     let updatedMatch = { ...match };
     
-    if (match.games.length > 0) {
-      const winsA = match.games.filter(game => game.winner === 'A').length;
-      const winsB = match.games.filter(game => game.winner === 'B').length;
+    // Calculate wins and determine winner based on game results
+    if (updatedMatch.games.length > 0) {
+      const winsA = updatedMatch.games.filter(game => game.winner === 'A').length;
+      const winsB = updatedMatch.games.filter(game => game.winner === 'B').length;
       
+      // Set the winner field based on game wins
       if (winsA > winsB) {
-        updatedMatch.winner = match.playerA;
+        updatedMatch.winner = updatedMatch.playerA;
       } else if (winsB > winsA) {
-        updatedMatch.winner = match.playerB;
+        updatedMatch.winner = updatedMatch.playerB;
       } else if (winsA === winsB && winsA > 0) {
-        // Draw if there are games but equal wins
+        // Draw case - explicitly set as empty string
         updatedMatch.winner = "";
       }
     }
